@@ -63,6 +63,10 @@ function AuthShowcase() {
     { enabled: sessionData?.user !== undefined },
   );
 
+  const { refetch } = api.example.getYoutubeVideos.useQuery(undefined, {
+    enabled: false,
+  });
+
   return (
     <div className="flex flex-col items-center justify-center gap-4">
       <p className="text-center text-2xl text-white">
@@ -74,6 +78,19 @@ function AuthShowcase() {
         onClick={sessionData ? () => void signOut() : () => void signIn()}
       >
         {sessionData ? "Sign out" : "Sign in"}
+      </button>
+      <button
+        onClick={() => {
+          refetch()
+            .then((data) => {
+              console.log(data, "videos");
+            })
+            .catch((e) => {
+              console.error(e);
+            });
+        }}
+      >
+        Geet Vids
       </button>
     </div>
   );
