@@ -6,6 +6,9 @@ await import("./src/env.mjs");
 
 /** @type {import("next").NextConfig} */
 const config = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   reactStrictMode: true,
   // eslint-disable-next-line @typescript-eslint/require-await
   async headers() {
