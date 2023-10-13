@@ -150,7 +150,7 @@ export const youtubeRouter = createTRPCRouter({
       const notionPagesIDs = difference.deletedFromMain.map(
         (page) => page.notionPageID,
       );
-      void postDelayedRequests(notionPagesIDs, archiveNotionPage, 350);
+      await postDelayedRequests(notionPagesIDs, archiveNotionPage, 350);
 
       const message = {
         message_deleted: "deleted following videos from youtube playlist",
@@ -176,12 +176,12 @@ export const youtubeRouter = createTRPCRouter({
       //* post to notion main DB (new video objects)
       console.log("posting new video to main - only add case");
       const newDataToMainDB = combineVideoArrays(newFormattedVideos, durations);
-      void postDelayedRequests(newDataToMainDB, postToNotionDatabase, 350);
+      await postDelayedRequests(newDataToMainDB, postToNotionDatabase, 350);
 
       //* post to notion snapshot DB (new video objects)
       console.log("posting new video to snapshot - only add case");
       const newDataToSnapshotDB = formatSnapshotData(newRawPlaylistItems);
-      void postDelayedRequests(newDataToSnapshotDB, postToNotionSnapshot, 350);
+      await postDelayedRequests(newDataToSnapshotDB, postToNotionSnapshot, 350);
 
       const message = {
         message_added_new: "new videos added",
