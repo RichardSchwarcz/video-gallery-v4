@@ -6,7 +6,19 @@ import Link from "next/link";
 
 function App() {
   const { status } = useSession();
-  const { refetch } = api.example.getYoutubeVideos.useQuery(undefined, {
+  const { refetch: refetchVideos } = api.youtube.getYoutubeVideos.useQuery(
+    undefined,
+    {
+      enabled: false,
+    },
+  );
+  const { refetch: refetchTest } = api.youtube.getYoutubeVideos.useQuery(
+    undefined,
+    {
+      enabled: false,
+    },
+  );
+  const { refetch: refetchSync } = api.youtube.sync.useQuery(undefined, {
     enabled: false,
   });
   const [videos, setVideos] = useState([]);
@@ -36,7 +48,7 @@ function App() {
         </Button>
         <Button
           onClick={() => {
-            refetch()
+            refetchVideos()
               .then((data) => {
                 setVideos(data.data?.items);
               })
@@ -46,6 +58,32 @@ function App() {
           }}
         >
           Get Vids
+        </Button>
+        <Button
+          onClick={() => {
+            refetchTest()
+              .then((data) => {
+                console.log(data);
+              })
+              .catch((e) => {
+                console.error(e);
+              });
+          }}
+        >
+          Test
+        </Button>
+        <Button
+          onClick={() => {
+            refetchSync()
+              .then((data) => {
+                console.log(data);
+              })
+              .catch((e) => {
+                console.error(e);
+              });
+          }}
+        >
+          Sync
         </Button>
       </div>
       <div className="pt-4">
