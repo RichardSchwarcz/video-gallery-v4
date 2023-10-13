@@ -33,12 +33,72 @@ declare module "next-auth" {
   // }
 }
 
+// const GOOGLE_AUTHORIZATION_URL =
+
+/**
+ * Takes a token, and returns a new token with updated
+ * `accessToken` and `accessTokenExpires`. If an error occurs,
+ * returns the old token and an error property
+ */
+async function refreshAccessToken(token: TokenSet) {
+  try {
+    const url = "https://oauth2.googleapis.com/token";
+    if (token.refresh_token) {
+      const options = {
+        client_id: env.GOOGLE_CLIENT_ID,
+        client_secret: env.GOOGLE_CLIENT_SECRET,
+        grant_type: "refresh_token",
+        refresh_token: token.refresh_token,
+      };
+      const qs = new URLSearchParams(options);
+
+      const response = await fetch(`${url}?${qs.toString()}`, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        method: "POST",
+      });
+
+      const refreshedTokens = await response.json();
+
+      if (!response.ok) {
+        throw refreshedTokens;
+      }
+
+      return {
+        ...token,
+        access_token: refreshedTokens.access_token,
+        access_token_expires: Date.now() + refreshedTokens.expires_in * 1000,
+        refresh_token: refreshedTokens.refresh_token ?? token.refreshToken, // Fall back to old refresh token
+      };
+    }
+  } catch (error) {
+    console.log(error);
+
+    return {
+      ...token,
+      error: "RefreshAccessTokenError",
+    };
+  }
+}
+
 const scopes = [
   "https://www.googleapis.com/auth/youtube",
   "openid",
   "email",
   "profile",
 ];
+
+const rootURL = "https://accounts.google.com/o/oauth2/v2/auth";
+
+const options = {
+  access_type: "offline",
+  response_type: "code",
+  prompt: "consent",
+  // scope: scopes.join(" "),
+};
+
+const qs = new URLSearchParams(options);
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -50,13 +110,20 @@ export const authOptions: NextAuthOptions = {
         token = {
           ...token,
           access_token: account.access_token,
+          access_token_expires: account.expires_at,
+          refresh_token: account.refresh_token,
           scope: account.scope,
         };
+
+        // Return previous token if the access token has not expired yet
+        if (Date.now() < account.expires_at! * 1000) {
+          return token;
+        }
+        return refreshAccessToken(token);
       }
       return token;
     },
     session: ({ session, token }) => {
-      // console.log(token, "TOKEN");
       session = {
         ...session,
         token,
@@ -73,6 +140,7 @@ export const authOptions: NextAuthOptions = {
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
       authorization: {
+        url: `${rootURL}?${qs.toString()}`,
         params: {
           scope: scopes.join(" "),
         },
