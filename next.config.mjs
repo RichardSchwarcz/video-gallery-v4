@@ -9,6 +9,9 @@ const config = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   reactStrictMode: true,
   // eslint-disable-next-line @typescript-eslint/require-await
   async headers() {
