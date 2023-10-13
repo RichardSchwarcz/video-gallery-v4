@@ -5,7 +5,7 @@ import { api } from "~/utils/api";
 import Link from "next/link";
 
 function App() {
-  const { status } = useSession();
+  const { status, data: sessionData } = useSession();
   const { refetch: refetchVideos } = api.youtube.getYoutubeVideos.useQuery(
     undefined,
     {
@@ -38,6 +38,7 @@ function App() {
 
   return (
     <div className="p-4">
+      <p>Welcome {sessionData?.user.name}</p>
       <div className="flex items-center justify-center gap-4">
         <Button
           onClick={() => {
