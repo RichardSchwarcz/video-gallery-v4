@@ -1,29 +1,34 @@
+import type { QueryDatabaseResponse } from "@notionhq/client/build/src/api-endpoints";
 import {
   type RawPlaylistItem,
   type PlaylistItem,
   type VideoDuration,
   type VideoSchema,
 } from "../types/videoTypes";
-import { type NotionDataIDs } from "./notion";
+import type { Video, NotionDataIDs } from "./notionHelpers";
 import { getYoutubeVideoIDfromURL } from "./youtubeHelpers";
 
 export function findPlaylistItemsIDsInSnapshotToDelete(
   difference: NotionDataIDs[],
-  notionSnapshotData: any,
+  notionSnapshotData: QueryDatabaseResponse,
 ): string[] {
   const videosIDs = difference.map((item) => item.youtubeVideoID);
 
   const snapshotDataToDelete = notionSnapshotData.results.filter(
-    (video: any) => {
+    //@ts-expect-error not assignable parameter
+    (video: Video) => {
       const URL: string = video.properties.URL.url;
       const ID = getYoutubeVideoIDfromURL(URL);
       return ID ? videosIDs.includes(ID) : null;
     },
   );
 
-  const playlistItemsIDs: string[] = snapshotDataToDelete.map((video: any) => {
-    return video.properties.PlaylistItemID.rich_text[0].text.content;
-  });
+  const playlistItemsIDs: string[] = snapshotDataToDelete.map(
+    //@ts-expect-error not assignable parameter
+    (video: Video) => {
+      return video.properties.PlaylistItemID.rich_text[0].text.content;
+    },
+  );
   return playlistItemsIDs;
 }
 
