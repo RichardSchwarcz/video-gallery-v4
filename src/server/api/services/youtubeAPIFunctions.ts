@@ -1,4 +1,4 @@
-import { type VideosOptions } from "./types/videoTypes";
+import type { VideosOptions } from "../types/videoTypes";
 
 const ENDPOINT = {
   playlistItems: "playlistItems",
@@ -21,8 +21,6 @@ export async function getYoutubeVideos<T>(
       Authorization: `Bearer ${accessToken}`,
     },
   });
-
-  // console.log("RES================>", await res.json());
 
   if (!res.ok) {
     throw new Error(res.statusText);

@@ -3,12 +3,27 @@ import {
   type CreatePageParameters,
   type CreatePageResponse,
 } from "@notionhq/client/build/src/api-endpoints";
-import { type VideoSchema } from "./types/videoTypes";
+import { type VideoSchema } from "../types/videoTypes";
 import { env } from "~/env.mjs";
 
 const notion = new Client({ auth: process.env.NOTION_SECRET });
 
 // ------------- FUNCTIONS ----------------
+
+export async function getNotionData() {
+  const databaseId = env.NOTION_DATABASE_ID;
+  const mainData = await notion.databases.query({ database_id: databaseId });
+
+  const snapshot_id = env.NOTION_SNAPSHOT_ID;
+  const snapshotData = await notion.databases.query({
+    database_id: snapshot_id,
+  });
+
+  return {
+    mainData,
+    snapshotData,
+  };
+}
 
 export async function postToNotionDatabase(
   video: VideoSchema,
@@ -45,6 +60,9 @@ export async function postToNotionDatabase(
   };
   return await notion.pages.create(parameters);
 }
+
+// ----------------------------------------------------------------
+
 export async function postToNotionSnapshot(video: {
   title: string;
   url: string;
@@ -71,6 +89,8 @@ export async function postToNotionSnapshot(video: {
   };
   return await notion.pages.create(parameters);
 }
+
+// -------------------------------------------------------------------
 
 export async function archiveNotionPage(pageId: string) {
   return notion.pages.update({
