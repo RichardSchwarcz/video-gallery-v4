@@ -1,7 +1,5 @@
-import { z } from "zod";
-
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { getNotionData, getNotionIDs } from "../utils/notion";
+import { getNotionIDs } from "../utils/notionHelpers";
 import {
   findDeletedVideos,
   type DifferenceObject,
@@ -22,7 +20,7 @@ import {
   deleteYoutubePlaylistItem,
   getYoutubeVideos,
   getYoutubeVideosRecursively,
-} from "../getYoutubeVideos";
+} from "../services/youtubeAPIFunctions";
 import {
   formatPlaylistItems,
   getVideosIds,
@@ -30,9 +28,10 @@ import {
 } from "../utils/youtubeHelpers";
 import {
   archiveNotionPage,
+  getNotionData,
   postToNotionDatabase,
   postToNotionSnapshot,
-} from "../postToNotionDatabase";
+} from "../services/notionAPIFunctions";
 
 export const youtubeRouter = createTRPCRouter({
   getYoutubeVideos: protectedProcedure.query(async ({ ctx }) => {
@@ -60,7 +59,10 @@ export const youtubeRouter = createTRPCRouter({
     }
   }),
   test: protectedProcedure.query(async ({ ctx }) => {
-    const access_token = ctx.session.token.access_token;
+    const accessToken = ctx.session.token.access_token;
+    if (accessToken === undefined) {
+      throw new Error("Unauthenticated");
+    }
 
     const videosOptions = {
       part: "snippet",
@@ -68,7 +70,7 @@ export const youtubeRouter = createTRPCRouter({
       playlistId: PLAYLIST_ID,
     };
     const qs = new URLSearchParams(videosOptions);
-    return getYoutubeVideos(access_token, "playlistItems", qs);
+    return getYoutubeVideos(accessToken, "playlistItems", qs);
   }),
   sync: protectedProcedure.query(async ({ ctx }) => {
     const accessToken = ctx.session.token.access_token;
@@ -83,7 +85,6 @@ export const youtubeRouter = createTRPCRouter({
       notionSnapshotDataIDs,
       notionSnapshotVideosIDs,
     } = getNotionIDs(mainData, snapshotData);
-    // console.log("MAIN DATA ==========> ", mainData.results);
 
     //* compare main and snapshot -> see which videos have been deleted from main
     const difference: DifferenceObject = findDeletedVideos(

@@ -1,4 +1,4 @@
-import { youtubeRouter } from "~/server/api/routers/youtube";
+import { youtubeRouter } from "~/server/api/routers/youtubeRouter";
 import { createTRPCRouter } from "~/server/api/trpc";
 
 /**
