@@ -1,11 +1,24 @@
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import Head from "next/head";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import Image from "next/image";
 import Database from "../assets/Database.webp";
+import { useRouter } from "next/router";
 
 export default function Home() {
+  const { status } = useSession();
+  const router = useRouter();
+
+  const CTAButton = () => {
+    if (status === "authenticated") {
+      return (
+        <Button onClick={() => void router.push("/app")}>Go to APP</Button>
+      );
+    } else {
+      <Button onClick={() => void signIn()}>Get Started</Button>;
+    }
+  };
   return (
     <>
       <Head>
@@ -15,7 +28,7 @@ export default function Home() {
       <div className="flex items-center justify-end gap-8 border-b-[1px] p-4 pr-20 ">
         <Link href={""}>Docs</Link>
         <Link href={""}>Pricing</Link>
-        <Button onClick={() => void signIn()}>Get Started</Button>
+        {CTAButton()}
       </div>
       {/* HERO SECTION */}
       <div className="m-10 flex border">
