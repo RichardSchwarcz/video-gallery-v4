@@ -15,8 +15,9 @@ export default function Home() {
       return (
         <Button onClick={() => void router.push("/app")}>Go to APP</Button>
       );
-    } else {
-      <Button onClick={() => void signIn()}>Get Started</Button>;
+    }
+    if (status === "unauthenticated") {
+      return <Button onClick={() => void signIn()}>Get Started</Button>;
     }
   };
   return (
