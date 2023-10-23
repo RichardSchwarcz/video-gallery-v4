@@ -4,16 +4,26 @@ import { Button } from "~/components/ui/button";
 import { api } from "~/utils/api";
 import Link from "next/link";
 import { ModeToggle } from "~/components/mode-toggle";
+import router from "next/router";
+import type { Session } from "next-auth/core/types";
 
 function App() {
   const { status, data: sessionData } = useSession();
+
+  const checkScopes = (sessionData: Session | null) => {
+    if (sessionData?.token.scope?.includes("youtube")) {
+      return <div>Authorized for youtube</div>;
+    } else {
+      return <div>Proceed for youtube authorization</div>;
+    }
+  };
   const { refetch: refetchVideos } = api.youtube.getYoutubeVideos.useQuery(
     undefined,
     {
       enabled: false,
     },
   );
-  const { refetch: refetchTest } = api.youtube.getYoutubeVideos.useQuery(
+  const { refetch: refetchTest } = api.notion.createMockPage.useQuery(
     undefined,
     {
       enabled: false,
@@ -74,7 +84,7 @@ function App() {
               });
           }}
         >
-          Test
+          Test notion load
         </Button>
         <Button
           onClick={() => {
@@ -116,6 +126,16 @@ function App() {
           ensures a smoother and more efficient user experience!&rdquo;
         </div>
       </div>
+      <Button onClick={() => void router.push("/app/auth/youtube")}>
+        Youtube Authorization
+      </Button>
+      <Button onClick={() => void router.push("/app/auth/notion")}>
+        Notion Authorization
+      </Button>
+      <Button onClick={() => void router.push("/api/auth/test")}>
+        req initiator test
+      </Button>
+      {checkScopes(sessionData)}
     </div>
   );
 }
