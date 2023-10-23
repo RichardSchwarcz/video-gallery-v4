@@ -1,5 +1,5 @@
-import { youtubeRouter } from "~/server/api/routers/youtubeRouter";
 import { createTRPCRouter } from "~/server/api/trpc";
+import { youtubeRouter } from "./routers/youtubeRouter";
 import { notionRouter } from "./routers/notionRouter";
 
 /**
