@@ -23,12 +23,7 @@ function App() {
       enabled: false,
     },
   );
-  const { refetch: refetchTest } = api.notion.createMockPage.useQuery(
-    undefined,
-    {
-      enabled: false,
-    },
-  );
+
   const { refetch: refetchSync } = api.youtube.sync.useQuery(undefined, {
     enabled: false,
   });
@@ -72,19 +67,6 @@ function App() {
           }}
         >
           Get Vids
-        </Button>
-        <Button
-          onClick={() => {
-            refetchTest()
-              .then((data) => {
-                console.log(data);
-              })
-              .catch((e) => {
-                console.error(e);
-              });
-          }}
-        >
-          Test notion load
         </Button>
         <Button
           onClick={() => {
