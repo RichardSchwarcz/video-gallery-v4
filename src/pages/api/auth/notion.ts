@@ -15,29 +15,31 @@ export default async function handler(
     }
 
     const tokens = await getNotionOAuthTokens(code);
+    console.log(tokens);
     const email = session?.user.email;
 
     if (tokens && email) {
-      // get user by email
-      const user = await prisma.user.findFirst({
-        where: {
-          email: { contains: email },
-        },
-      });
-      await prisma.notionToken.create({
-        data: {
-          access_token: tokens.access_token,
-          token_type: tokens.token_type,
-          bot_id: tokens.bot_id,
-          workspace_name: tokens.workspace_name,
-          workspace_icon: tokens.workspace_icon,
-          workspace_id: tokens.workspace_id,
-          owner_id: tokens.owner.user.id,
-          duplicated_template_id: tokens.duplicated_template_id,
-          request_id: tokens.request_id,
-          userId: user?.id,
-        },
-      });
+      // TODO uncomment when DB is available again
+      // // get user by email
+      // const user = await prisma.user.findFirst({
+      //   where: {
+      //     email: { contains: email },
+      //   },
+      // });
+      // await prisma.notionToken.create({
+      //   data: {
+      //     access_token: tokens.access_token,
+      //     token_type: tokens.token_type,
+      //     bot_id: tokens.bot_id,
+      //     workspace_name: tokens.workspace_name,
+      //     workspace_icon: tokens.workspace_icon,
+      //     workspace_id: tokens.workspace_id,
+      //     owner_id: tokens.owner.user.id,
+      //     duplicated_template_id: tokens.duplicated_template_id,
+      //     request_id: tokens.request_id,
+      //     userId: user?.id,
+      //   },
+      // });
       res.status(200).redirect("/app");
     }
   } catch (error) {
