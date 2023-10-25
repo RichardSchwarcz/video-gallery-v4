@@ -37,59 +37,48 @@ declare module "next-auth" {
  * `accessToken` and `accessTokenExpires`. If an error occurs,
  * returns the old token and an error property
  */
-// async function refreshAccessToken(token: TokenSet) {
-//   try {
-//     const url = "https://oauth2.googleapis.com/token";
-//     if (token.refresh_token) {
-//       const options = {
-//         client_id: env.GOOGLE_CLIENT_ID,
-//         client_secret: env.GOOGLE_CLIENT_SECRET,
-//         grant_type: "refresh_token",
-//         refresh_token: token.refresh_token,
-//       };
-//       const qs = new URLSearchParams(options);
+async function refreshAccessToken(token: TokenSet) {
+  try {
+    const url = "https://oauth2.googleapis.com/token";
+    if (token.refresh_token) {
+      const options = {
+        client_id: env.GOOGLE_CLIENT_ID,
+        client_secret: env.GOOGLE_CLIENT_SECRET,
+        grant_type: "refresh_token",
+        refresh_token: token.refresh_token,
+      };
+      const qs = new URLSearchParams(options);
 
-//       const response = await fetch(`${url}?${qs.toString()}`, {
-//         headers: {
-//           "Content-Type": "application/x-www-form-urlencoded",
-//         },
-//         method: "POST",
-//       });
+      const response = await fetch(`${url}?${qs.toString()}`, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        method: "POST",
+      });
 
-//       const refreshedTokens = await response.json();
+      const refreshedTokens = (await response.json()) as TokenSet;
 
-//       if (!response.ok) {
-//         throw refreshedTokens;
-//       }
+      if (!response.ok) {
+        throw refreshedTokens;
+      }
 
-//       return {
-//         ...token,
-//         access_token: refreshedTokens.access_token,
-//         access_token_expires: Date.now() + refreshedTokens.expires_in * 1000,
-//         refresh_token: refreshedTokens.refresh_token ?? token.refreshToken, // Fall back to old refresh token
-//       };
-//     }
-//   } catch (error) {
-//     console.log(error);
+      return {
+        ...token,
+        access_token: refreshedTokens.access_token,
+        access_token_expires: Date.now() + refreshedTokens.expires_at * 1000,
+        refresh_token: refreshedTokens.refresh_token ?? token.refresh_token, // Fall back to old refresh token
+      };
+    }
+  } catch (error) {
+    console.log(error);
 
-//     return {
-//       ...token,
-//       error: "RefreshAccessTokenError",
-//     };
-//   }
-// }
+    return {
+      ...token,
+      error: "RefreshAccessTokenError",
+    };
+  }
+}
 
-// const rootURL = "https://accounts.google.com/o/oauth2/v2/auth";
-
-// const options = {
-//   access_type: "offline",
-//   response_type: "code",
-//   prompt: "consent",
-// };
-
-// const qs = new URLSearchParams(options);
-
-// const scopes = OAUTH_GOOGLE_SCOPES_WITHOUT_YOUTUBE;
 export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
   const authOptions: NextAuthOptions = {
     session: {
@@ -103,11 +92,13 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
         there is a risk of duplication.
         */
         const session = await getServerSession(req, res, authOptions);
-        console.log({ session });
 
-        const user = await prisma.user.findFirst({
-          where: { email: { contains: profile?.email } },
-        });
+        // TODO uncomment when DB is available
+        // const user = await prisma.user.findFirst({
+        //   where: { email: { contains: profile?.email } },
+        // });
+        const user = true;
+        // !!!---------------------------------------------------
 
         if (profile) {
           if (!user && !session) {
@@ -155,7 +146,7 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
           if (Date.now() < account.expires_at! * 1000) {
             return token;
           }
-          // return refreshAccessToken(token);
+          return refreshAccessToken(token);
         }
         return token;
       },
@@ -170,7 +161,6 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
         return "/app";
       },
     },
-    // adapter: PrismaAdapter(db),
     providers: [
       GoogleProvider({
         clientId: env.GOOGLE_CLIENT_ID,
@@ -186,16 +176,16 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
  *
  * @see https://next-auth.js.org/configuration/nextjs
  */
-// export const getServerAuthSession = (ctx: {
-//   req: GetServerSidePropsContext["req"];
-//   res: GetServerSidePropsContext["res"];
-// }) => {
-//   return getServerSession(
-//     ctx.req,
-//     ctx.res,
-//     // authOptionsWrapper(),
-//   );
-// };
+export const getServerAuthSession = (ctx: {
+  req: NextApiRequest;
+  res: NextApiResponse;
+}) => {
+  return getServerSession(
+    ctx.req,
+    ctx.res,
+    authOptionsWrapper(ctx.req, ctx.res),
+  );
+};
 
 // interface GoogleProfile {
 //   iss: string;
