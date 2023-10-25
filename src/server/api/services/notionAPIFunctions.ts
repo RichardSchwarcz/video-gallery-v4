@@ -6,7 +6,9 @@ import {
 import { type VideoSchema } from "../types/videoTypes";
 import { env } from "~/env.mjs";
 
-const notion = new Client({ auth: process.env.NOTION_SECRET });
+// TODO get access token from DB when available
+const access_token = env.NOTION_ACCESS_TOKEN;
+const notion = new Client({ auth: access_token });
 
 // ------------- FUNCTIONS ----------------
 
