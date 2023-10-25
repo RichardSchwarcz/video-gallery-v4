@@ -22,11 +22,7 @@ import {
   postToNotionDatabase,
   postToNotionSnapshot,
 } from "../services/notionAPIFunctions";
-import type {
-  CreatePageParameters,
-  CreatePageResponse,
-} from "@notionhq/client/build/src/api-endpoints";
-import { Client } from "@notionhq/client";
+import { env } from "~/env.mjs";
 
 export const notionRouter = createTRPCRouter({
   handleInitialLoad: protectedProcedure.query(async ({ ctx }) => {
@@ -105,38 +101,17 @@ export const notionRouter = createTRPCRouter({
       console.log(error);
     }
   }),
-  createMockPage: protectedProcedure.query(async () => {
-    await createMockNotionPage();
-    return "hi";
+  getOAuthURL: protectedProcedure.query(() => {
+    const rootURL = "https://api.notion.com/v1/oauth/authorize";
+    const options = {
+      client_id: env.NOTION_CLIENT_ID,
+      response_type: "code",
+      owner: "user",
+      redirect_uri: env.NOTION_REDIRECT_URI,
+    };
+    const qs = new URLSearchParams(options);
+    const url = `${rootURL}?${qs.toString()}`;
+
+    return url;
   }),
 });
-
-export async function createMockNotionPage(): Promise<CreatePageResponse> {
-  const access_token = "secret_Ek7ZLkFr6zGt6X7qQ48EMS4RT4rdtb3antoiPCvkGz0";
-  const notion = new Client({ auth: access_token });
-  const parameters: CreatePageParameters = {
-    parent: {
-      type: "database_id",
-      database_id: "af3ab5736fb04ac6b861c251dd7df858",
-    },
-    properties: {
-      Name: {
-        title: [{ text: { content: "serus" } }],
-      },
-      Author: {
-        rich_text: [
-          {
-            type: "text",
-            text: {
-              content: "ryso",
-            },
-          },
-        ],
-      },
-      Duration: {
-        rich_text: [{ type: "text", text: { content: "100" } }],
-      },
-    },
-  };
-  return await notion.pages.create(parameters);
-}
