@@ -18,7 +18,6 @@ import {
 } from "../types/videoTypes";
 import {
   deleteYoutubePlaylistItem,
-  getYoutubeVideos,
   getYoutubeVideosRecursively,
 } from "../services/youtubeAPIFunctions";
 import {
@@ -57,20 +56,6 @@ export const youtubeRouter = createTRPCRouter({
     } catch (error) {
       console.log(error);
     }
-  }),
-  test: protectedProcedure.query(async ({ ctx }) => {
-    const accessToken = ctx.session.token.access_token;
-    if (accessToken === undefined) {
-      throw new Error("Unauthenticated");
-    }
-
-    const videosOptions = {
-      part: "snippet",
-      maxResults: "50",
-      playlistId: PLAYLIST_ID,
-    };
-    const qs = new URLSearchParams(videosOptions);
-    return getYoutubeVideos(accessToken, "playlistItems", qs);
   }),
   sync: protectedProcedure.query(async ({ ctx }) => {
     const accessToken = ctx.session.token.access_token;
