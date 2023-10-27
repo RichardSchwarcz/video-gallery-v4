@@ -24,6 +24,7 @@ export const env = createEnv({
     NOTION_REDIRECT_URI: z.string().min(1),
 
     NEXTAUTH_SECRET: z.string().min(1),
+    NEXTAUTH_URL: z.string().min(1),
   },
 
   /**
@@ -55,6 +56,7 @@ export const env = createEnv({
     NOTION_REDIRECT_URI: process.env.NOTION_REDIRECT_URI,
 
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
