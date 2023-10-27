@@ -31,7 +31,7 @@ export function ProfileDropdownMenu({ sessionData }: PropsType) {
           </Avatar>
         </DropdownMenuTrigger>
       </TooltipWrapper>
-      <DropdownMenuContent className="w-56">
+      <DropdownMenuContent className="w-56" align="end">
         <DropdownMenuLabel>{sessionData?.user.name}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
