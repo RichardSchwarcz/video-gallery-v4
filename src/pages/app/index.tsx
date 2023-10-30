@@ -1,22 +1,29 @@
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { api } from "~/utils/api";
 import Link from "next/link";
 import { ModeToggle } from "~/components/mode-toggle";
-import router from "next/router";
-import type { Session } from "next-auth/core/types";
+import { ProfileDropdownMenu } from "~/components/profile-dropdown-menu";
+import { AuthorizationMenu } from "~/components/authorization-menu";
+import AuthorizationConsent from "~/components/authorization-consent";
 
 function App() {
+  const callSSE = () => {
+    const eventSource = new EventSource("/api/sync");
+    eventSource.addEventListener("syncEvent", (e) => {
+      console.log(JSON.parse(e.data));
+    });
+    eventSource.addEventListener("open", (e) => {
+      console.log("open", e);
+    });
+    eventSource.addEventListener("error", (e) => {
+      eventSource.close();
+    });
+  };
+
   const { status, data: sessionData } = useSession();
 
-  const checkScopes = (sessionData: Session | null) => {
-    if (sessionData?.token.scope?.includes("youtube")) {
-      return <div>Authorized for youtube</div>;
-    } else {
-      return <div>Proceed for youtube authorization</div>;
-    }
-  };
   const { refetch: refetchVideos } = api.youtube.getYoutubeVideos.useQuery(
     undefined,
     {
@@ -44,17 +51,13 @@ function App() {
 
   return (
     <div className="p-4">
-      <p>Welcome {sessionData?.user.name}</p>
-      <ModeToggle />
+      <nav className="flex flex-row-reverse items-center gap-2 rounded-md">
+        <ProfileDropdownMenu sessionData={sessionData} />
+        <AuthorizationMenu sessionData={sessionData} />
+        <ModeToggle />
+      </nav>
 
       <div className="flex items-center justify-center gap-4">
-        <Button
-          onClick={() => {
-            void signOut();
-          }}
-        >
-          Sign out
-        </Button>
         <Button
           onClick={() => {
             refetchVideos()
@@ -81,43 +84,14 @@ function App() {
         >
           Sync
         </Button>
+        <Button onClick={() => callSSE()}>CALL SSE</Button>
       </div>
       <div className="pt-4">
         {videos.map((video) => (
           <li key={video.etag}>{video.snippet.title}</li>
         ))}
       </div>
-      <div className="mx-auto flex w-1/3 flex-col rounded-md border border-slate-600 p-4 text-justify">
-        <div className="mb-2">
-          &ldquo;Welcome to Notion Video Gallery! To begin your journey, we need
-          your permission to access essential features. Without authorization,
-          Notion Video Gallery won&apos;t function properly, and you won&apos;t
-          be able to use the app.
-        </div>
-
-        <div className="mb-2">
-          Your privacy and data security are our top priorities, and we only
-          request the permissions necessary for optimal performance.
-        </div>
-        <div className="mb-2">
-          To get started, click &lsquo;Next&rsquo; and experience the core
-          functionalities of Notion Video Gallery.
-        </div>
-        <div className="text-sm">
-          Thank you for choosing Notion Video Gallery—where every permission
-          ensures a smoother and more efficient user experience!&rdquo;
-        </div>
-      </div>
-      <Button onClick={() => void router.push("/app/auth/youtube")}>
-        Youtube Authorization
-      </Button>
-      <Button onClick={() => void router.push("/app/auth/notion")}>
-        Notion Authorization
-      </Button>
-      <Button onClick={() => void router.push("/api/auth/test")}>
-        req initiator test
-      </Button>
-      {checkScopes(sessionData)}
+      <AuthorizationConsent />
     </div>
   );
 }
