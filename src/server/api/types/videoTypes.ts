@@ -91,3 +91,21 @@ export type RawVideoData = {
     projection: string;
   };
 };
+
+export type ArchivedVideoInfo = {
+  // schema returned from noembed https://noembed.com/embed?url=https://www.youtube.com/watch?v=
+  author_name: string;
+  author_url: string;
+  height: number;
+  html: string;
+  provider_name: string;
+  provider_url: string;
+  thumbnail_height: number;
+  thumbnail_url: string;
+  thumbnail_width: number;
+  title: string;
+  type: string;
+  url: string;
+  version: string;
+  width: number;
+};
