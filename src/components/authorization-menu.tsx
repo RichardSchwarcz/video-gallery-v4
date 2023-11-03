@@ -13,19 +13,13 @@ import Youtube from "./icons/youtube";
 import { TooltipWrapper } from "./tooltip-wrapper";
 import { cn } from "~/lib/utils";
 import type { Session } from "next-auth/core/types";
+import { isYoutubeAuthorized } from "~/utils/auth";
 
 type PropsType = {
   sessionData: Session | null;
 };
 
 export function AuthorizationMenu({ sessionData }: PropsType) {
-  const isYoutubeAuthorized = (sessionData: Session | null) => {
-    if (sessionData?.token.scope?.includes("youtube")) {
-      return true;
-    } else {
-      return false;
-    }
-  };
   const isNotionAuthorized = () => {
     return true;
   };
