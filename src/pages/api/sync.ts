@@ -155,8 +155,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     stream.on("isDeletedFromMain", function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message: "deleted following videos from youtube playlist",
-          status: syncStatus.deleted,
+          message: syncMessage.deleted,
           data: archivedVideoInfo,
         })}\n\n`,
       );
@@ -190,8 +189,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     stream.on("hasNewYoutubeVideos", function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message: "new videos added",
-          status: syncStatus.added,
+          message: syncMessage.added,
           data: newDataToMainDB,
         })}\n\n`,
       );
@@ -225,8 +223,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     stream.on("isDeletedFromSnapshot", function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message: "accidentally deleted videos added back to snapshot DB",
-          status: syncStatus.snapshot,
+          message: syncMessage.snapshot,
           data: newDataToSnapshotDB,
         })}\n\n`,
       );
@@ -238,8 +235,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     stream.on("isSynced", function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message: "everything is in sync!",
-          status: syncStatus.synced,
+          message: syncMessage.synced,
         })}\n\n`,
       );
     });
@@ -249,8 +245,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   stream.on("done", function (event) {
     res.write(
       `event: ${event}\ndata: ${JSON.stringify({
-        message: "Done!",
-        status: syncStatus.done,
+        message: syncMessage.done,
       })}\n\n`,
     );
   });
@@ -261,7 +256,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
 export default handler;
 
-export const syncStatus = {
+export const syncMessage = {
   deleted: "deleted",
   added: "added",
   snapshot: "snapshot",
@@ -269,4 +264,4 @@ export const syncStatus = {
   done: "done",
 } as const;
 
-export type SyncStatusType = keyof typeof syncStatus;
+export type SyncMessageType = keyof typeof syncMessage;
