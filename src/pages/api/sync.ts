@@ -10,12 +10,13 @@ import {
   postDelayedRequests,
 } from "~/server/api/utils/syncHelpers";
 import { PLAYLIST_ID } from "~/server/constants";
-import {
-  type PlaylistItem,
-  type RawPlaylistItem,
-  type RawVideoData,
-  type VideoDuration,
-  type VideosOptions,
+import type {
+  ArchivedVideoInfo,
+  PlaylistItem,
+  RawPlaylistItem,
+  RawVideoData,
+  VideoDuration,
+  VideosOptions,
 } from "~/server/api/types/videoTypes";
 import {
   deleteYoutubePlaylistItem,
@@ -24,6 +25,7 @@ import {
 import {
   formatPlaylistItems,
   getVideosIds,
+  getYoutubeVideoIDfromURL,
   getYoutubeVideosDuration,
 } from "~/server/api/utils/youtubeHelpers";
 import {
@@ -33,6 +35,8 @@ import {
   postToNotionSnapshot,
 } from "~/server/api/services/notionAPIFunctions";
 import EventEmitter from "events";
+import { isYoutubeAuthorized } from "~/utils/auth";
+import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession({ req });
@@ -49,7 +53,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const stream = new EventEmitter();
 
   const accessToken = session?.token.access_token;
-  if (accessToken === undefined) {
+  if (accessToken === undefined || !isYoutubeAuthorized(session)) {
     throw new Error("Unauthenticated");
   }
 
@@ -122,13 +126,38 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const notionPagesIDs = difference.deletedFromMain.map(
       (page) => page.notionPageID,
     );
-    await postDelayedRequests(notionPagesIDs, archiveNotionPage, 350);
+    const archivedPages = (await postDelayedRequests(
+      notionPagesIDs,
+      archiveNotionPage,
+      350,
+    )) as PageObjectResponse[];
+
+    const getArchivedVideoInfo = async (
+      archivedPages: PageObjectResponse[],
+    ): Promise<ArchivedVideoInfo[]> => {
+      const props = archivedPages.map((page) => page.properties);
+      const info = await Promise.all(
+        props.map(async (prop) => {
+          if (prop.URL) {
+            const url = prop.URL.url as string;
+            const id = getYoutubeVideoIDfromURL(url);
+            const baseURL =
+              "https://noembed.com/embed?url=https://www.youtube.com/watch?v=";
+            return (await fetch(baseURL + id)).json();
+          }
+        }),
+      );
+      return info as ArchivedVideoInfo[];
+    };
+
+    const archivedVideoInfo = await getArchivedVideoInfo(archivedPages);
 
     stream.on("isDeletedFromMain", function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message_deleted: "deleted following videos from youtube playlist",
-          videos_deleted: difference.deletedFromMain,
+          message: "deleted following videos from youtube playlist",
+          status: syncStatus.deleted,
+          data: archivedVideoInfo,
         })}\n\n`,
       );
     });
@@ -161,8 +190,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     stream.on("hasNewYoutubeVideos", function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message_added_new: "new videos added",
-          videos_added_new: newDataToMainDB,
+          message: "new videos added",
+          status: syncStatus.added,
+          data: newDataToMainDB,
         })}\n\n`,
       );
     });
@@ -195,9 +225,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     stream.on("isDeletedFromSnapshot", function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message_added_to_snapshot:
-            "accidentally deleted videos added back to snapshot DB",
-          videos_added_to_snapshot: newDataToSnapshotDB,
+          message: "accidentally deleted videos added back to snapshot DB",
+          status: syncStatus.snapshot,
+          data: newDataToSnapshotDB,
         })}\n\n`,
       );
     });
@@ -209,6 +239,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
           message: "everything is in sync!",
+          status: syncStatus.synced,
         })}\n\n`,
       );
     });
@@ -219,6 +250,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     res.write(
       `event: ${event}\ndata: ${JSON.stringify({
         message: "Done!",
+        status: syncStatus.done,
       })}\n\n`,
     );
   });
@@ -228,3 +260,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 }
 
 export default handler;
+
+export const syncStatus = {
+  deleted: "deleted",
+  added: "added",
+  snapshot: "snapshot",
+  synced: "synced",
+  done: "done",
+} as const;
+
+export type SyncStatusType = keyof typeof syncStatus;
