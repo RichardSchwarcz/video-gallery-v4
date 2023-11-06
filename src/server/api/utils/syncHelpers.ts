@@ -104,6 +104,8 @@ export function formatSnapshotData(rawPlaylistItems: RawPlaylistItem[]) {
   });
 }
 
+export type SnapshotData = ReturnType<typeof formatSnapshotData>;
+
 export async function postDelayedRequests<T, U>(
   dataArray: T[],
   requestFunction: (element: T) => Promise<U>,
