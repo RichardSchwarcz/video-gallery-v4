@@ -1,7 +1,6 @@
 import { useSession } from "next-auth/react";
 import { useReducer, useState } from "react";
 import { Button } from "~/components/ui/button";
-import { api } from "~/utils/api";
 import Link from "next/link";
 import { ModeToggle } from "~/components/mode-toggle";
 import { ProfileDropdownMenu } from "~/components/profile-dropdown-menu";
@@ -13,6 +12,7 @@ import type {
   ArchivedVideoInfo,
   VideoSchema,
 } from "~/server/api/types/videoTypes";
+import type { SnapshotData } from "~/server/api/utils/syncHelpers";
 
 // type EventSourceDataType = {
 //   message: SyncMessageType;
@@ -21,61 +21,60 @@ import type {
 
 type EventSourceDataType =
   | {
-      message: "deleted";
+      message: "deleted these videos from youtube playlist";
       data: ArchivedVideoInfo[];
     }
   | {
-      message: "added";
+      message: "added these videos";
       data: VideoSchema[];
     }
   | {
-      message: "snapshot" | "synced" | "done";
+      message: "snapshot";
+      data: SnapshotData;
+    }
+  | {
+      message: "everything is in sync" | "done";
     };
 
 function App() {
   const { status, data: sessionData } = useSession();
-  const { refetch: refetchVideos } = api.youtube.getYoutubeVideos.useQuery(
-    undefined,
-    {
-      enabled: false,
-    },
-  );
-  const [videos, setVideos] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const initialState = {
-    added: {
+    comparing: {
       message: "",
-      data: [],
     },
-    deleted: {
+    deleting: {
       message: "",
-      data: [],
+    },
+    adding: {
+      message: "",
     },
     synced: {
       message: "",
     },
     done: {
       message: "",
+    },
+    snapshotAdding: {
+      message: "",
+    },
+
+    added: {
+      message: "",
+      data: [] as VideoSchema[],
+    },
+    deleted: {
+      message: "",
+      data: [] as ArchivedVideoInfo[],
+    },
+    snapshot: {
+      message: "",
+      data: [] as SnapshotData,
     },
   };
 
-  type initialStateType = {
-    added: {
-      message: string;
-      data: VideoSchema[];
-    };
-    deleted: {
-      message: string;
-      data: ArchivedVideoInfo[];
-    };
-    synced: {
-      message: string;
-    };
-    done: {
-      message: string;
-    };
-  };
+  type initialStateType = typeof initialState;
 
   type Action = {
     type: string;
@@ -108,6 +107,15 @@ function App() {
         ...state,
         synced: {
           message: action.synced.message,
+        },
+      };
+    }
+    if (action.type === syncMessage.snapshot) {
+      return {
+        ...state,
+        snapshot: {
+          message: action.snapshot.message,
+          data: action.snapshot.data,
         },
       };
     }
@@ -192,33 +200,28 @@ function App() {
         <ModeToggle />
       </nav>
 
-      <div className="flex items-center justify-center gap-4">
-        <Button
-          onClick={() => {
-            refetchVideos()
-              .then((data) => {
-                setVideos(data.data?.items);
-              })
-              .catch((e) => {
-                console.error(e);
-              });
-          }}
-        >
-          Get Vids
-        </Button>
-        {isSyncing ? (
-          <ButtonLoading />
-        ) : (
-          <Button onClick={() => handleSync()}>Sync</Button>
-        )}
+      <div className="mx-auto flex h-96 w-1/4 flex-col items-center rounded-md border border-slate-500 p-4">
+        <div>
+          {isSyncing ? (
+            <ButtonLoading />
+          ) : (
+            <Button onClick={() => handleSync()} className="w-64">
+              Sync
+            </Button>
+          )}
+        </div>
+        <div className="mt-4 h-80 w-64 rounded-md border border-slate-500 p-4">
+          <div className="border-b border-slate-500 text-center text-lg">
+            Sync status messages
+          </div>
+          <div className="pt-4">{state.added.message}</div>
+          <div className="pt-4">{state.deleted.message}</div>
+          <div className="pt-4">{state.done.message}</div>
+          <div className="pt-4">{state.synced.message}</div>
+          <div className="pt-4">{state.snapshot.message}</div>
+        </div>
       </div>
-      <div className="pt-4">
-        {videos.map((video) => (
-          <li key={video.etag}>{video.snippet.title}</li>
-        ))}
-      </div>
-
-      <AuthorizationConsent />
+      {/* <AuthorizationConsent /> */}
     </div>
   );
 }
