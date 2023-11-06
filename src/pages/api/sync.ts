@@ -57,6 +57,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     throw new Error("Unauthenticated");
   }
 
+  stream.on("comparingDifference", function (event) {
+    res.write(
+      `event: ${event}\ndata: ${JSON.stringify({
+        message: syncMessage.comparing,
+      })}\n\n`,
+    );
+  });
+  stream.emit("comparingDifference", "syncEvent");
+
   const { mainData, snapshotData } = await getNotionData();
   const {
     notionMainDataIDs,
@@ -95,7 +104,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   // format new videos
   const newFormattedVideos: PlaylistItem[] =
     formatPlaylistItems(newRawPlaylistItems);
-  console.log("these are all new formatted videos: ", newFormattedVideos);
 
   const isDeletedFromMain = difference.deletedFromMain.length > 0;
   const hasNewYoutubeVideos = newFormattedVideos.length > 0;
@@ -112,7 +120,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     );
 
     //* delete request to youtube playlist (remove videos deleted in notion)
-    console.log("deleting from youtube");
+    stream.on("deletingFromYoutube", function (event) {
+      res.write(
+        `event: ${event}\ndata: ${JSON.stringify({
+          message: syncMessage.deleting,
+        })}\n\n`,
+      );
+    });
+    stream.emit("deletingFromYoutube", "syncEvent");
+
     for (const item of playlistItemsIDsToDelete) {
       const qs = new URLSearchParams({ id: item });
       const res = await deleteYoutubePlaylistItem(accessToken, qs);
@@ -122,7 +138,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       }
     }
 
-    console.log("removing difference deleting from snapshot");
     const notionPagesIDs = difference.deletedFromMain.map(
       (page) => page.notionPageID,
     );
@@ -177,12 +192,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const durations: VideoDuration[] = getYoutubeVideosDuration(rawVideosData);
 
     //* post to notion main DB (new video objects)
-    console.log("posting new video to main - only add case");
+    stream.on("addingToNotion", function (event) {
+      res.write(
+        `event: ${event}\ndata: ${JSON.stringify({
+          message: syncMessage.adding,
+        })}\n\n`,
+      );
+    });
+    stream.emit("addingToNotion", "syncEvent");
+
     const newDataToMainDB = combineVideoArrays(newFormattedVideos, durations);
     await postDelayedRequests(newDataToMainDB, postToNotionDatabase, 350);
 
     //* post to notion snapshot DB (new video objects)
-    console.log("posting new video to snapshot - only add case");
     const newDataToSnapshotDB = formatSnapshotData(newRawPlaylistItems);
     await postDelayedRequests(newDataToSnapshotDB, postToNotionSnapshot, 350);
 
@@ -208,16 +230,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   if (isDeletedFromSnapshot) {
     //* post to notion snapshot DB (new video objects)
-    console.log(
-      "posting new video to snapshot - only deleted from snapshot case",
-    );
+
+    stream.on("snapshotAdding", function (event) {
+      res.write(
+        `event: ${event}\ndata: ${JSON.stringify({
+          message: syncMessage.snapshotAdding,
+        })}\n\n`,
+      );
+    });
+    stream.emit("snapshotAdding", "syncEvent");
+
     const newDataToSnapshotDB = formatSnapshotData(
       accidentallyDeletedFromSnapshot,
     );
-    console.log(
-      "these are accidentally deleted videos from snapshot",
-      newDataToSnapshotDB,
-    );
+
     void postDelayedRequests(newDataToSnapshotDB, postToNotionSnapshot, 350);
 
     stream.on("isDeletedFromSnapshot", function (event) {
@@ -257,11 +283,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 export default handler;
 
 export const syncMessage = {
-  deleted: "deleted",
-  added: "added",
-  snapshot: "snapshot",
-  synced: "synced",
+  comparing: "comparing differences between notion and youtube",
+  deleting: "deleting videos from youtube playlist",
+  adding: "adding videos to notion database",
+  snapshotAdding: "adding videos back to notion snapshot database",
+  synced: "everything is in sync",
   done: "done",
+  deleted: "deleted these videos from youtube playlist",
+  added: "added these videos to notion database",
+  snapshot: "added these videos back to notion snapshot database",
 } as const;
 
 export type SyncMessageType = keyof typeof syncMessage;
