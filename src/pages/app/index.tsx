@@ -5,40 +5,33 @@ import Link from "next/link";
 import { ModeToggle } from "~/components/mode-toggle";
 import { ProfileDropdownMenu } from "~/components/profile-dropdown-menu";
 import { AuthorizationMenu } from "~/components/authorization-menu";
-import AuthorizationConsent from "~/components/authorization-consent";
 import { ButtonLoading } from "~/components/ui/button-loading";
-import { syncMessage } from "../api/sync";
+import { type EventSourceDataType, syncMessage } from "../api/sync";
 import type {
   ArchivedVideoInfo,
   VideoSchema,
 } from "~/server/api/types/videoTypes";
 import type { SnapshotData } from "~/server/api/utils/syncHelpers";
+import Image from "next/image";
+import { TooltipWrapper } from "~/components/tooltip-wrapper";
 
-// type EventSourceDataType = {
-//   message: SyncMessageType;
-//   data: VideoSchema[];
-// };
-
-type EventSourceDataType =
-  | {
-      message: "deleted these videos from youtube playlist";
-      data: ArchivedVideoInfo[];
-    }
-  | {
-      message: "added these videos";
-      data: VideoSchema[];
-    }
-  | {
-      message: "snapshot";
-      data: SnapshotData;
-    }
-  | {
-      message: "everything is in sync" | "done";
-    };
+const truncateTitle = (title: string, limit = 60): string => {
+  if (title.length <= limit) {
+    return title;
+  }
+  const lastSpace = title.lastIndexOf(" ", limit);
+  if (lastSpace === -1) {
+    return `${title.slice(0, limit)}...`;
+  }
+  return `${title.slice(0, lastSpace)}...`;
+};
 
 function App() {
   const { status, data: sessionData } = useSession();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isDeletedVisible, setIsDeletedVisible] = useState(false);
+  const [isAddedVisible, setIsAddedVisible] = useState(false);
+  const [isDoneVisible, setIsDoneVisible] = useState(false);
 
   const initialState = {
     comparing: {
@@ -81,7 +74,6 @@ function App() {
   } & initialStateType;
 
   const [state, dispatch] = useReducer(reducer, initialState);
-  console.log({ state });
 
   function reducer(state: initialStateType, action: Action): initialStateType {
     if (action.type === syncMessage.added) {
@@ -102,14 +94,6 @@ function App() {
         },
       };
     }
-    if (action.type === syncMessage.synced) {
-      return {
-        ...state,
-        synced: {
-          message: action.synced.message,
-        },
-      };
-    }
     if (action.type === syncMessage.snapshot) {
       return {
         ...state,
@@ -119,11 +103,51 @@ function App() {
         },
       };
     }
+    if (action.type === syncMessage.synced) {
+      return {
+        ...state,
+        synced: {
+          message: action.synced.message,
+        },
+      };
+    }
     if (action.type === syncMessage.done) {
       return {
         ...state,
         done: {
           message: action.done.message,
+        },
+      };
+    }
+    if (action.type === syncMessage.adding) {
+      return {
+        ...state,
+        adding: {
+          message: action.adding.message,
+        },
+      };
+    }
+    if (action.type === syncMessage.comparing) {
+      return {
+        ...state,
+        comparing: {
+          message: action.comparing.message,
+        },
+      };
+    }
+    if (action.type === syncMessage.deleting) {
+      return {
+        ...state,
+        deleting: {
+          message: action.deleting.message,
+        },
+      };
+    }
+    if (action.type === syncMessage.snapshotAdding) {
+      return {
+        ...state,
+        snapshotAdding: {
+          message: action.snapshotAdding.message,
         },
       };
     } else {
@@ -166,6 +190,41 @@ function App() {
           });
           setIsSyncing(false);
         }
+        if (data.message == syncMessage.snapshot) {
+          dispatch({
+            ...initialState,
+            type: syncMessage.snapshot,
+            snapshot: { message: data.message, data: data.data },
+          });
+        }
+        if (data.message == syncMessage.adding) {
+          dispatch({
+            ...initialState,
+            type: syncMessage.adding,
+            adding: { message: data.message },
+          });
+        }
+        if (data.message == syncMessage.comparing) {
+          dispatch({
+            ...initialState,
+            type: syncMessage.comparing,
+            comparing: { message: data.message },
+          });
+        }
+        if (data.message == syncMessage.deleting) {
+          dispatch({
+            ...initialState,
+            type: syncMessage.deleting,
+            deleting: { message: data.message },
+          });
+        }
+        if (data.message == syncMessage.snapshotAdding) {
+          dispatch({
+            ...initialState,
+            type: syncMessage.snapshotAdding,
+            snapshotAdding: { message: data.message },
+          });
+        }
       });
       eventSource.addEventListener("open", (e) => {
         console.log("open", e);
@@ -200,7 +259,7 @@ function App() {
         <ModeToggle />
       </nav>
 
-      <div className="mx-auto flex h-96 w-1/4 flex-col items-center rounded-md border border-slate-500 p-4">
+      <div className="mx-auto flex w-fit flex-col items-center rounded-md border border-slate-500 p-4">
         <div>
           {isSyncing ? (
             <ButtonLoading />
@@ -210,18 +269,207 @@ function App() {
             </Button>
           )}
         </div>
-        <div className="mt-4 h-80 w-64 rounded-md border border-slate-500 p-4">
-          <div className="border-b border-slate-500 text-center text-lg">
-            Sync status messages
+        <div className="mt-4 flex gap-2 ">
+          <div className="w-64 rounded-md border border-slate-500 p-4">
+            <div className="border-b border-slate-500 text-center text-lg">
+              Sync status messages
+            </div>
+            <div>
+              {!!state.comparing.message && (
+                <div className="flex flex-col gap-1">
+                  <div className="py-2">{state.comparing.message}</div>
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                </div>
+              )}
+              {!!state.deleting.message && (
+                <div className="flex flex-col gap-1">
+                  <div className="pt-4">{state.deleting.message}</div>
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                </div>
+              )}
+              {!!state.deleted.message && (
+                <div className="flex flex-col gap-1">
+                  <div
+                    className="pt-4"
+                    onClick={() => {
+                      setIsDeletedVisible(!isDeletedVisible);
+                      setIsAddedVisible(false);
+                      setIsDoneVisible(false);
+                    }}
+                  >
+                    {state.deleted.message}
+                  </div>
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                </div>
+              )}
+              {!!state.adding.message && (
+                <div className="flex flex-col gap-1">
+                  <div className="pt-4">{state.adding.message}</div>
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                </div>
+              )}
+              {!!state.added.message && (
+                <div className="flex flex-col gap-1">
+                  <div
+                    className="pt-4"
+                    onClick={() => {
+                      setIsAddedVisible(!isAddedVisible);
+                      setIsDeletedVisible(false);
+                      setIsDoneVisible(false);
+                    }}
+                  >
+                    {state.added.message}
+                  </div>
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                </div>
+              )}
+              {!!state.snapshotAdding.message && (
+                <div className="flex flex-col gap-1">
+                  <div className="pt-4">{state.snapshotAdding.message}</div>
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                </div>
+              )}
+              {!!state.snapshot.message && (
+                <div className="flex flex-col gap-1">
+                  <div className="pt-4">{state.snapshot.message}</div>
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                </div>
+              )}
+              {!!state.done.message && (
+                <div
+                  className="pt-4"
+                  onClick={() => {
+                    setIsDoneVisible(!isDoneVisible);
+                    setIsDeletedVisible(false);
+                    setIsAddedVisible(false);
+                  }}
+                >
+                  {state.done.message}
+                </div>
+              )}
+              {!!state.synced.message && (
+                <div className="flex flex-col gap-1">
+                  <div className="pt-4">{state.synced.message}</div>
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                </div>
+              )}
+            </div>
           </div>
-          <div className="pt-4">{state.added.message}</div>
-          <div className="pt-4">{state.deleted.message}</div>
-          <div className="pt-4">{state.done.message}</div>
-          <div className="pt-4">{state.synced.message}</div>
-          <div className="pt-4">{state.snapshot.message}</div>
+          <div className="w-64 rounded-md border border-slate-500 p-4">
+            <div className="border-b border-slate-500 text-center text-lg">
+              Details
+            </div>
+            {isDeletedVisible && (
+              <div>
+                {state.deleted.data.map((data) => {
+                  return (
+                    <div
+                      key={data.title}
+                      className="my-2 flex flex-col rounded-md border border-slate-500"
+                    >
+                      <Image
+                        src={data.thumbnail_url}
+                        alt="img"
+                        width="480"
+                        height="360"
+                        className="rounded-t-md"
+                      />
+                      <TooltipWrapper text={data.title}>
+                        <a href={data.url} target="_blank">
+                          <div className="p-2 text-sm">
+                            {truncateTitle(data.title)}
+                          </div>
+                        </a>
+                      </TooltipWrapper>
+                      <TooltipWrapper text={data.author_name}>
+                        <div className="p-2 text-sm font-semibold">
+                          {data.author_name}
+                        </div>
+                      </TooltipWrapper>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {isAddedVisible && (
+              <div>
+                {state.added.data.map((data) => {
+                  console.log({ data });
+                  return (
+                    <div
+                      key={data.title}
+                      className="my-2 flex flex-col rounded-md border border-slate-500"
+                    >
+                      <Image
+                        src={data.thumbnail}
+                        alt="img"
+                        width="480"
+                        height="360"
+                        className="rounded-t-md"
+                      />
+                      <TooltipWrapper text={data.title}>
+                        <a href={data.url} target="_blank">
+                          <div className="p-2 text-sm">
+                            {truncateTitle(data.title)}
+                          </div>
+                        </a>
+                      </TooltipWrapper>
+                      <TooltipWrapper text={data.videoOwnerChannelTitle}>
+                        <div className="p-2 text-sm font-semibold">
+                          {data.videoOwnerChannelTitle}
+                        </div>
+                      </TooltipWrapper>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {isDoneVisible && (
+              <div>
+                <div>Added {state.added.data.length} videos to notion</div>
+                <div>
+                  {/* Deleted {state.deleted.data.length} videos from youtube */}
+                  {state.deleted.data.length > 1 ? (
+                    <div
+                      onClick={() => {
+                        setIsDeletedVisible(!isDeletedVisible);
+                        setIsDoneVisible(false);
+                      }}
+                    >
+                      Deleted {state.deleted.data.length} videos from youtube
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => {
+                        setIsDeletedVisible(!isDeletedVisible);
+                        setIsDoneVisible(false);
+                      }}
+                    >
+                      Deleted {state.deleted.data.length} video from youtube
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      {/* <AuthorizationConsent /> */}
     </div>
   );
 }
