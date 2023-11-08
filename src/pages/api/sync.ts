@@ -8,6 +8,7 @@ import {
   combineVideoArrays,
   formatSnapshotData,
   postDelayedRequests,
+  type SnapshotData,
 } from "~/server/api/utils/syncHelpers";
 import { PLAYLIST_ID } from "~/server/constants";
 import type {
@@ -16,6 +17,7 @@ import type {
   RawPlaylistItem,
   RawVideoData,
   VideoDuration,
+  VideoSchema,
   VideosOptions,
 } from "~/server/api/types/videoTypes";
 import {
@@ -283,15 +285,62 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 export default handler;
 
 export const syncMessage = {
-  comparing: "comparing differences between notion and youtube",
-  deleting: "deleting videos from youtube playlist",
-  adding: "adding videos to notion database",
-  snapshotAdding: "adding videos back to notion snapshot database",
-  synced: "everything is in sync",
-  done: "done",
-  deleted: "deleted these videos from youtube playlist",
-  added: "added these videos to notion database",
-  snapshot: "added these videos back to notion snapshot database",
+  comparing: "Comparing differences between notion and youtube",
+  deleting: "Deleting videos from youtube playlist",
+  adding: "Adding videos to notion database",
+  synced: "Everything is already in sync",
+  done: "Everything is in sync 🎉",
+  snapshotAdding: "Adding videos back to notion snapshot database",
+
+  deleted: "Deleted these videos from youtube playlist",
+  added: "Added these videos to notion database",
+  snapshot: "Added these videos back to notion snapshot database",
 } as const;
 
-export type SyncMessageType = keyof typeof syncMessage;
+export type EventSourceDataType =
+  | {
+      message: typeof syncMessage.deleted;
+      data: ArchivedVideoInfo[];
+    }
+  | {
+      message: typeof syncMessage.added;
+      data: VideoSchema[];
+    }
+  | {
+      message: typeof syncMessage.snapshot;
+      data: SnapshotData;
+    }
+  | {
+      message: typeof syncMessage.comparing;
+    }
+  | {
+      message: typeof syncMessage.adding;
+    }
+  | {
+      message: typeof syncMessage.deleting;
+    }
+  | {
+      message: typeof syncMessage.snapshotAdding;
+    }
+  | {
+      message: typeof syncMessage.synced;
+    }
+  | {
+      message: typeof syncMessage.done;
+    };
+
+// export type SyncMessageType = keyof typeof syncMessage;
+
+// const streamFunc = (
+//   event: any,
+//   res: NextApiResponse,
+//   message: string,
+//   data?,
+// ) => {
+//   res.write(
+//     `event: ${event}\ndata: ${JSON.stringify({
+//       message: syncMessage.synced,
+//       data,
+//     })}\n\n`,
+//   );
+// };
