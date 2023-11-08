@@ -14,6 +14,12 @@ const config = {
         port: "",
         pathname: "/a/**",
       },
+      {
+        protocol: "https",
+        hostname: "i.ytimg.com",
+        port: "",
+        pathname: "/vi/**",
+      },
     ],
   },
   typescript: {
