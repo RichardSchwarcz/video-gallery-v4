@@ -14,17 +14,7 @@ import type {
 import type { SnapshotData } from "~/server/api/utils/syncHelpers";
 import Image from "next/image";
 import { TooltipWrapper } from "~/components/tooltip-wrapper";
-
-const truncateTitle = (title: string, limit = 60): string => {
-  if (title.length <= limit) {
-    return title;
-  }
-  const lastSpace = title.lastIndexOf(" ", limit);
-  if (lastSpace === -1) {
-    return `${title.slice(0, limit)}...`;
-  }
-  return `${title.slice(0, lastSpace)}...`;
-};
+import { truncateTitle } from "~/utils/truncateVideoTitle";
 
 function App() {
   const { status, data: sessionData } = useSession();
@@ -442,9 +432,15 @@ function App() {
             )}
             {isDoneVisible && (
               <div>
-                <div>Added {state.added.data.length} videos to notion</div>
+                <div
+                  onClick={() => {
+                    setIsAddedVisible(!isAddedVisible);
+                    setIsDoneVisible(false);
+                  }}
+                >
+                  Added {state.added.data.length} videos to notion
+                </div>
                 <div>
-                  {/* Deleted {state.deleted.data.length} videos from youtube */}
                   {state.deleted.data.length > 1 ? (
                     <div
                       onClick={() => {
