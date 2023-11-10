@@ -11,6 +11,7 @@ import Image from 'next/image'
 import { TooltipWrapper } from '~/components/tooltip-wrapper'
 import { truncateTitle } from '~/utils/truncateVideoTitle'
 import { initialState, reducer } from '~/utils/reducer'
+import SyncStatusMessage from '~/components/sync-status-message'
 
 function App() {
   const { status, data: sessionData } = useSession()
@@ -141,20 +142,10 @@ function App() {
             </div>
             <div>
               {!!state.comparing.message && (
-                <div className="flex flex-col gap-1">
-                  <div className="py-2">{state.comparing.message}</div>
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                </div>
+                <SyncStatusMessage message={state.comparing.message} />
               )}
               {!!state.deleting.message && (
-                <div className="flex flex-col gap-1">
-                  <div className="pt-4">{state.deleting.message}</div>
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                </div>
+                <SyncStatusMessage message={state.deleting.message} />
               )}
               {!!state.deleted.message && (
                 <div className="flex flex-col gap-1">
@@ -174,12 +165,7 @@ function App() {
                 </div>
               )}
               {!!state.adding.message && (
-                <div className="flex flex-col gap-1">
-                  <div className="pt-4">{state.adding.message}</div>
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                </div>
+                <SyncStatusMessage message={state.adding.message} />
               )}
               {!!state.added.message && (
                 <div className="flex flex-col gap-1">
@@ -199,20 +185,10 @@ function App() {
                 </div>
               )}
               {!!state.snapshotAdding.message && (
-                <div className="flex flex-col gap-1">
-                  <div className="pt-4">{state.snapshotAdding.message}</div>
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                </div>
+                <SyncStatusMessage message={state.snapshotAdding.message} />
               )}
               {!!state.snapshot.message && (
-                <div className="flex flex-col gap-1">
-                  <div className="pt-4">{state.snapshot.message}</div>
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                </div>
+                <SyncStatusMessage message={state.snapshot.message} />
               )}
               {!!state.done.message && (
                 <div
@@ -227,12 +203,7 @@ function App() {
                 </div>
               )}
               {!!state.synced.message && (
-                <div className="flex flex-col gap-1">
-                  <div className="pt-4">{state.synced.message}</div>
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                </div>
+                <SyncStatusMessage message={state.synced.message} />
               )}
             </div>
           </div>
