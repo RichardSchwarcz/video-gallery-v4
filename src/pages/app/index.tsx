@@ -136,8 +136,8 @@ function App() {
           )}
         </div>
         <div className="mt-4 flex gap-2">
-          <div className="h-[50vh] w-64 rounded-md border border-slate-500 p-4">
-            <div className="border-b border-slate-500 text-center text-lg">
+          <div className="max-h-[560px] w-64 rounded-md border border-slate-500 p-4">
+            <div className="mb-2 border-b border-slate-500 text-center text-lg">
               Sync status messages
             </div>
             <div>
@@ -148,7 +148,7 @@ function App() {
                 <SyncStatusMessage message={state.deleting.message} />
               )}
               {!!state.deleted.message && (
-                <div className="flex flex-col gap-1 py-2">
+                <div className="flex flex-col gap-1">
                   <Button
                     variant={'syncMessage'}
                     size={'syncMessage'}
@@ -160,16 +160,20 @@ function App() {
                   >
                     {state.deleted.message}
                   </Button>
-                  {/* <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" /> */}
-                  {/* <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" /> */}
-                  {/* <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" /> */}
+                  <div className="flex justify-center">
+                    <svg height="20" width="33">
+                      <circle cx="4" cy="8.5" r="3" fill="gray" />
+                      <circle cx="14" cy="8.5" r="3" fill="gray" />
+                      <circle cx="24" cy="8.5" r="3" fill="gray" />
+                    </svg>
+                  </div>
                 </div>
               )}
               {!!state.adding.message && (
                 <SyncStatusMessage message={state.adding.message} />
               )}
               {!!state.added.message && (
-                <div className="flex flex-col gap-1 py-2">
+                <div className="flex flex-col gap-1">
                   <Button
                     variant={'syncMessage'}
                     size={'syncMessage'}
@@ -181,9 +185,13 @@ function App() {
                   >
                     {state.added.message}
                   </Button>
-                  {/* <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" /> */}
-                  {/* <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" /> */}
-                  {/* <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" /> */}
+                  <div className="flex justify-center">
+                    <svg height="20" width="33">
+                      <circle cx="4" cy="8.5" r="3" fill="gray" />
+                      <circle cx="14" cy="8.5" r="3" fill="gray" />
+                      <circle cx="24" cy="8.5" r="3" fill="gray" />
+                    </svg>
+                  </div>
                 </div>
               )}
               {!!state.snapshotAdding.message && (
@@ -210,7 +218,7 @@ function App() {
               )}
             </div>
           </div>
-          <div className="w-64 rounded-md border border-slate-500 p-4">
+          <div className="max-h-[560px] w-64 overflow-y-scroll rounded-md border border-slate-500 p-4">
             <div className="border-b border-slate-500 text-center text-lg">
               Details
             </div>
