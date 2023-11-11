@@ -135,8 +135,8 @@ function App() {
             </Button>
           )}
         </div>
-        <div className="mt-4 flex gap-2 ">
-          <div className="w-64 rounded-md border border-slate-500 p-4">
+        <div className="mt-4 flex gap-2">
+          <div className="h-[50vh] w-64 rounded-md border border-slate-500 p-4">
             <div className="border-b border-slate-500 text-center text-lg">
               Sync status messages
             </div>
@@ -148,9 +148,10 @@ function App() {
                 <SyncStatusMessage message={state.deleting.message} />
               )}
               {!!state.deleted.message && (
-                <div className="flex flex-col gap-1">
-                  <div
-                    className="pt-4"
+                <div className="flex flex-col gap-1 py-2">
+                  <Button
+                    variant={'syncMessage'}
+                    size={'syncMessage'}
                     onClick={() => {
                       setIsDeletedVisible(!isDeletedVisible)
                       setIsAddedVisible(false)
@@ -158,19 +159,20 @@ function App() {
                     }}
                   >
                     {state.deleted.message}
-                  </div>
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  </Button>
+                  {/* <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" /> */}
+                  {/* <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" /> */}
+                  {/* <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" /> */}
                 </div>
               )}
               {!!state.adding.message && (
                 <SyncStatusMessage message={state.adding.message} />
               )}
               {!!state.added.message && (
-                <div className="flex flex-col gap-1">
-                  <div
-                    className="pt-4"
+                <div className="flex flex-col gap-1 py-2">
+                  <Button
+                    variant={'syncMessage'}
+                    size={'syncMessage'}
                     onClick={() => {
                       setIsAddedVisible(!isAddedVisible)
                       setIsDeletedVisible(false)
@@ -178,10 +180,10 @@ function App() {
                     }}
                   >
                     {state.added.message}
-                  </div>
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
-                  <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" />
+                  </Button>
+                  {/* <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" /> */}
+                  {/* <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" /> */}
+                  {/* <div className="mx-auto h-1 w-1 rounded-full border border-slate-700 bg-slate-500" /> */}
                 </div>
               )}
               {!!state.snapshotAdding.message && (
@@ -191,8 +193,9 @@ function App() {
                 <SyncStatusMessage message={state.snapshot.message} />
               )}
               {!!state.done.message && (
-                <div
-                  className="pt-4"
+                <Button
+                  variant={'syncMessage'}
+                  size={'syncMessage'}
                   onClick={() => {
                     setIsDoneVisible(!isDoneVisible)
                     setIsDeletedVisible(false)
@@ -200,7 +203,7 @@ function App() {
                   }}
                 >
                   {state.done.message}
-                </div>
+                </Button>
               )}
               {!!state.synced.message && (
                 <SyncStatusMessage message={state.synced.message} />
