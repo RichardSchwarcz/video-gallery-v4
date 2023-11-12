@@ -16,6 +16,7 @@ import SyncStatusMessage from '~/components/sync-status-message'
 function App() {
   const { status, data: sessionData } = useSession()
   const [isSyncing, setIsSyncing] = useState(false)
+  const [areDetailsVisible, setAreDetailsVisible] = useState(false)
   const [isDeletedVisible, setIsDeletedVisible] = useState(false)
   const [isAddedVisible, setIsAddedVisible] = useState(false)
   const [isDoneVisible, setIsDoneVisible] = useState(false)
@@ -137,7 +138,7 @@ function App() {
         </div>
         <div className="mt-4 flex gap-2">
           <div className="max-h-[560px] w-64 rounded-md border border-slate-500 p-4">
-            <div className="mb-2 border-b border-slate-500 text-center text-lg">
+            <div className="mb-2 border-b border-slate-500 text-center text-lg font-semibold">
               Sync status messages
             </div>
             <div>
@@ -153,6 +154,7 @@ function App() {
                     variant={'syncMessage'}
                     size={'syncMessage'}
                     onClick={() => {
+                      setAreDetailsVisible(true)
                       setIsDeletedVisible(!isDeletedVisible)
                       setIsAddedVisible(false)
                       setIsDoneVisible(false)
@@ -178,6 +180,7 @@ function App() {
                     variant={'syncMessage'}
                     size={'syncMessage'}
                     onClick={() => {
+                      setAreDetailsVisible(true)
                       setIsAddedVisible(!isAddedVisible)
                       setIsDeletedVisible(false)
                       setIsDoneVisible(false)
@@ -205,6 +208,7 @@ function App() {
                   variant={'syncMessage'}
                   size={'syncMessage'}
                   onClick={() => {
+                    setAreDetailsVisible(true)
                     setIsDoneVisible(!isDoneVisible)
                     setIsDeletedVisible(false)
                     setIsAddedVisible(false)
@@ -218,98 +222,100 @@ function App() {
               )}
             </div>
           </div>
-          <div className="max-h-[560px] w-64 overflow-y-scroll rounded-md border border-slate-500 p-4">
-            <div className="border-b border-slate-500 text-center text-lg">
-              Details
-            </div>
-            {isDeletedVisible && (
-              <div>
-                {state.deleted.data.map((data) => {
-                  return (
-                    <div
-                      key={data.title}
-                      className="my-2 flex flex-col rounded-md border border-slate-500"
-                    >
-                      <Image
-                        src={data.thumbnail_url}
-                        alt="img"
-                        width="480"
-                        height="360"
-                        className="rounded-t-md"
-                      />
-                      <TooltipWrapper text={data.title}>
-                        <a href={data.url} target="_blank">
-                          <div className="p-2 text-sm">
-                            {truncateTitle(data.title)}
-                          </div>
-                        </a>
-                      </TooltipWrapper>
-                      <TooltipWrapper text={data.author_name}>
-                        <div className="p-2 text-sm font-semibold">
-                          {data.author_name}
-                        </div>
-                      </TooltipWrapper>
-                    </div>
-                  )
-                })}
+          {areDetailsVisible && (
+            <div className="max-h-[560px] w-64 overflow-y-scroll rounded-md border border-slate-500 p-4">
+              <div className="border-b border-slate-500 text-center text-lg font-semibold">
+                Details
               </div>
-            )}
-            {isAddedVisible && (
-              <div>
-                {state.added.data.map((data) => {
-                  return (
-                    <div
-                      key={data.title}
-                      className="my-2 flex flex-col rounded-md border border-slate-500"
-                    >
-                      <Image
-                        src={data.thumbnail}
-                        alt="img"
-                        width="480"
-                        height="360"
-                        className="rounded-t-md"
-                      />
-                      <TooltipWrapper text={data.title}>
-                        <a href={data.url} target="_blank">
-                          <div className="p-2 text-sm">
-                            {truncateTitle(data.title)}
+              {isDeletedVisible && (
+                <div>
+                  {state.deleted.data.map((data) => {
+                    return (
+                      <div
+                        key={data.title}
+                        className="my-2 flex flex-col rounded-md border border-slate-500"
+                      >
+                        <Image
+                          src={data.thumbnail_url}
+                          alt="img"
+                          width="480"
+                          height="360"
+                          className="rounded-t-md"
+                        />
+                        <TooltipWrapper text={data.title}>
+                          <a href={data.url} target="_blank">
+                            <div className="p-2 text-sm">
+                              {truncateTitle(data.title)}
+                            </div>
+                          </a>
+                        </TooltipWrapper>
+                        <TooltipWrapper text={data.author_name}>
+                          <div className="p-2 text-sm font-semibold">
+                            {data.author_name}
                           </div>
-                        </a>
-                      </TooltipWrapper>
-                      <TooltipWrapper text={data.videoOwnerChannelTitle}>
-                        <div className="p-2 text-sm font-semibold">
-                          {data.videoOwnerChannelTitle}
-                        </div>
-                      </TooltipWrapper>
+                        </TooltipWrapper>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              {isAddedVisible && (
+                <div>
+                  {state.added.data.map((data) => {
+                    return (
+                      <div
+                        key={data.title}
+                        className="my-2 flex flex-col rounded-md border border-slate-500"
+                      >
+                        <Image
+                          src={data.thumbnail}
+                          alt="img"
+                          width="480"
+                          height="360"
+                          className="rounded-t-md"
+                        />
+                        <TooltipWrapper text={data.title}>
+                          <a href={data.url} target="_blank">
+                            <div className="p-2 text-sm">
+                              {truncateTitle(data.title)}
+                            </div>
+                          </a>
+                        </TooltipWrapper>
+                        <TooltipWrapper text={data.videoOwnerChannelTitle}>
+                          <div className="p-2 text-sm font-semibold">
+                            {data.videoOwnerChannelTitle}
+                          </div>
+                        </TooltipWrapper>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              {isDoneVisible && (
+                <div className="flex flex-col gap-2 pt-2">
+                  {state.added.data.length > 1 ? (
+                    <div className="rounded-md bg-gradient-to-tr from-lime-600 to-emerald-600 p-2 text-slate-100">
+                      Added {state.added.data.length} videos to youtube
                     </div>
-                  )
-                })}
-              </div>
-            )}
-            {isDoneVisible && (
-              <div className="flex flex-col gap-2 pt-2">
-                {state.added.data.length > 1 ? (
-                  <div className="rounded-md bg-gradient-to-tr from-lime-600 to-emerald-600 p-2 text-slate-100">
-                    Added {state.added.data.length} videos to youtube
-                  </div>
-                ) : (
-                  <div className="rounded-md bg-gradient-to-tr from-lime-600 to-emerald-600 p-2 text-slate-100">
-                    Added {state.added.data.length} video to youtube
-                  </div>
-                )}
+                  ) : (
+                    <div className="rounded-md bg-gradient-to-tr from-lime-600 to-emerald-600 p-2 text-slate-100">
+                      Added {state.added.data.length} video to youtube
+                    </div>
+                  )}
 
-                {state.deleted.data.length > 1 ? (
-                  <div className="rounded-md bg-gradient-to-tr from-rose-600 to-red-600 p-2 text-slate-100">
-                    Deleted {state.deleted.data.length} videos from youtube
-                  </div>
-                ) : (
-                  <div className="rounded-md bg-gradient-to-tr from-orange-500 to-rose-500 p-2 text-slate-100">
-                    Deleted {state.deleted.data.length} video from youtube
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                  {state.deleted.data.length > 1 ? (
+                    <div className="rounded-md bg-gradient-to-tr from-rose-600 to-red-600 p-2 text-slate-100">
+                      Deleted {state.deleted.data.length} videos from youtube
+                    </div>
+                  ) : (
+                    <div className="rounded-md bg-gradient-to-tr from-orange-500 to-rose-500 p-2 text-slate-100">
+                      Deleted {state.deleted.data.length} video from youtube
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
