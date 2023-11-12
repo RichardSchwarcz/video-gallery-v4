@@ -1,11 +1,11 @@
-function Youtube() {
+function Youtube({ width = '1.2rem', height = '1.2rem' }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       x="0px"
       y="0px"
-      width="1.2rem"
-      height="1.2rem"
+      width={width}
+      height={height}
       viewBox="0 0 48 48"
     >
       <path
@@ -14,7 +14,7 @@ function Youtube() {
       ></path>
       <path fill="#FFF" d="M20 31L20 17 32 24z"></path>
     </svg>
-  );
+  )
 }
 
-export default Youtube;
+export default Youtube
