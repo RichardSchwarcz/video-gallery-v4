@@ -257,7 +257,6 @@ function App() {
             {isAddedVisible && (
               <div>
                 {state.added.data.map((data) => {
-                  console.log({ data })
                   return (
                     <div
                       key={data.title}
@@ -288,36 +287,26 @@ function App() {
               </div>
             )}
             {isDoneVisible && (
-              <div>
-                <div
-                  onClick={() => {
-                    setIsAddedVisible(!isAddedVisible)
-                    setIsDoneVisible(false)
-                  }}
-                >
-                  Added {state.added.data.length} videos to notion
-                </div>
-                <div>
-                  {state.deleted.data.length > 1 ? (
-                    <div
-                      onClick={() => {
-                        setIsDeletedVisible(!isDeletedVisible)
-                        setIsDoneVisible(false)
-                      }}
-                    >
-                      Deleted {state.deleted.data.length} videos from youtube
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => {
-                        setIsDeletedVisible(!isDeletedVisible)
-                        setIsDoneVisible(false)
-                      }}
-                    >
-                      Deleted {state.deleted.data.length} video from youtube
-                    </div>
-                  )}
-                </div>
+              <div className="flex flex-col gap-2 pt-2">
+                {state.added.data.length > 1 ? (
+                  <div className="rounded-md bg-gradient-to-tr from-lime-600 to-emerald-600 p-2 text-slate-100">
+                    Added {state.added.data.length} videos to youtube
+                  </div>
+                ) : (
+                  <div className="rounded-md bg-gradient-to-tr from-lime-600 to-emerald-600 p-2 text-slate-100">
+                    Added {state.added.data.length} video to youtube
+                  </div>
+                )}
+
+                {state.deleted.data.length > 1 ? (
+                  <div className="rounded-md bg-gradient-to-tr from-rose-600 to-red-600 p-2 text-slate-100">
+                    Deleted {state.deleted.data.length} videos from youtube
+                  </div>
+                ) : (
+                  <div className="rounded-md bg-gradient-to-tr from-orange-500 to-rose-500 p-2 text-slate-100">
+                    Deleted {state.deleted.data.length} video from youtube
+                  </div>
+                )}
               </div>
             )}
           </div>
