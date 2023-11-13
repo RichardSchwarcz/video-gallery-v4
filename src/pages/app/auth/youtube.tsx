@@ -8,6 +8,7 @@ import { OAUTH_GOOGLE_SCOPES } from '~/server/constants'
 function YoutubeAuthPage() {
   const authorization = {
     scope: OAUTH_GOOGLE_SCOPES.join(' '),
+    access_type: 'offline', // to get refresh token
   }
 
   return (
