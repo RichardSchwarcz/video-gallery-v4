@@ -137,7 +137,7 @@ function App() {
           )}
         </div>
         <div className="mt-4 flex gap-2">
-          <div className="max-h-[560px] w-64 rounded-md border border-slate-500 p-4">
+          <div className="w-64 rounded-md border border-slate-500 p-4">
             <div className="mb-2 border-b border-slate-500 text-center text-lg font-semibold">
               Sync status messages
             </div>
@@ -223,7 +223,7 @@ function App() {
             </div>
           </div>
           {areDetailsVisible && (
-            <div className="max-h-[560px] w-64 overflow-y-scroll rounded-md border border-slate-500 p-4">
+            <div className="w-64 overflow-y-scroll rounded-md border border-slate-500 p-4">
               <div className="border-b border-slate-500 text-center text-lg font-semibold">
                 Details
               </div>
