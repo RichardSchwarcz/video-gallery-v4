@@ -1,6 +1,6 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { getSession } from "next-auth/react";
-import { getNotionIDs } from "~/server/api/utils/notionHelpers";
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { getSession } from 'next-auth/react'
+import { getNotionIDs } from '~/server/api/utils/notionHelpers'
 import {
   findDeletedVideos,
   type DifferenceObject,
@@ -9,8 +9,8 @@ import {
   formatSnapshotData,
   postDelayedRequests,
   type SnapshotData,
-} from "~/server/api/utils/syncHelpers";
-import { PLAYLIST_ID } from "~/server/constants";
+} from '~/server/api/utils/syncHelpers'
+import { PLAYLIST_ID } from '~/server/constants'
 import type {
   ArchivedVideoInfo,
   PlaylistItem,
@@ -19,97 +19,118 @@ import type {
   VideoDuration,
   VideoSchema,
   VideosOptions,
-} from "~/server/api/types/videoTypes";
+} from '~/server/api/types/videoTypes'
 import {
   deleteYoutubePlaylistItem,
   getYoutubeVideosRecursively,
-} from "~/server/api/services/youtubeAPIFunctions";
+} from '~/server/api/services/youtubeAPIFunctions'
 import {
   formatPlaylistItems,
   getVideosIds,
   getYoutubeVideoIDfromURL,
   getYoutubeVideosDuration,
-} from "~/server/api/utils/youtubeHelpers";
+} from '~/server/api/utils/youtubeHelpers'
 import {
   archiveNotionPage,
   getNotionData,
   postToNotionDatabase,
   postToNotionSnapshot,
-} from "~/server/api/services/notionAPIFunctions";
-import EventEmitter from "events";
-import { isYoutubeAuthorized } from "~/utils/auth";
-import type { PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+} from '~/server/api/services/notionAPIFunctions'
+import EventEmitter from 'events'
+import { isYoutubeAuthorized } from '~/utils/auth'
+import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints'
+import { prisma } from '~/server/db'
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = await getSession({ req });
+  const session = await getSession({ req })
   if (!session) {
-    res.redirect("/");
+    res.redirect('/')
   }
   res.writeHead(200, {
-    Connection: "keep-alive",
-    "Content-Encoding": "none",
-    "Cache-Control": "no-cache, no-transform",
-    "Content-Type": "text/event-stream",
-  });
+    Connection: 'keep-alive',
+    'Content-Encoding': 'none',
+    'Cache-Control': 'no-cache, no-transform',
+    'Content-Type': 'text/event-stream',
+  })
 
-  const stream = new EventEmitter();
+  const stream = new EventEmitter()
 
-  const accessToken = session?.token.access_token;
+  const accessToken = session?.token.access_token
   if (accessToken === undefined || !isYoutubeAuthorized(session)) {
-    throw new Error("Unauthenticated");
+    throw new Error('Unauthenticated')
   }
 
-  stream.on("comparingDifference", function (event) {
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        {
+          youtubeAccount: {
+            email: session?.user.email,
+          },
+        },
+        {
+          email: session?.user.email,
+        },
+      ],
+    },
+    select: {
+      notionAccessTokens: true,
+    },
+  })
+
+  const notionAccessToken = user?.notionAccessTokens[0]?.access_token ?? ''
+
+  stream.on('comparingDifference', function (event) {
     res.write(
       `event: ${event}\ndata: ${JSON.stringify({
         message: syncMessage.comparing,
       })}\n\n`,
-    );
-  });
-  stream.emit("comparingDifference", "syncEvent");
+    )
+  })
+  stream.emit('comparingDifference', 'syncEvent')
 
-  const { mainData, snapshotData } = await getNotionData();
+  const { mainData, snapshotData } = await getNotionData(notionAccessToken)
   const {
     notionMainDataIDs,
     notionMainVideosIDs,
     notionSnapshotDataIDs,
     notionSnapshotVideosIDs,
-  } = getNotionIDs(mainData, snapshotData);
+  } = getNotionIDs(mainData, snapshotData)
 
   //* compare main and snapshot -> see which videos have been deleted from main
   const difference: DifferenceObject = findDeletedVideos(
     notionMainDataIDs,
     notionSnapshotDataIDs,
-  );
+  )
 
   //* get youtube videos in case something has been added
   const videosOptions: VideosOptions = {
-    part: "snippet",
-    maxResults: "50",
+    part: 'snippet',
+    maxResults: '50',
     playlistId: PLAYLIST_ID,
-  };
+  }
   const rawPlaylistItems: RawPlaylistItem[] = await getYoutubeVideosRecursively(
     accessToken,
-    "playlistItems",
+    'playlistItems',
     videosOptions,
-  );
+  )
   //* compare with snapshot DB = see which videos are new
   const newRawPlaylistItems = rawPlaylistItems.filter(
     (video: RawPlaylistItem) => {
       return (
         !notionSnapshotVideosIDs.includes(video.snippet.resourceId.videoId) &&
         !notionMainVideosIDs.includes(video.snippet.resourceId.videoId)
-      );
+      )
     },
-  );
+  )
 
   // format new videos
   const newFormattedVideos: PlaylistItem[] =
-    formatPlaylistItems(newRawPlaylistItems);
+    formatPlaylistItems(newRawPlaylistItems)
 
-  const isDeletedFromMain = difference.deletedFromMain.length > 0;
-  const hasNewYoutubeVideos = newFormattedVideos.length > 0;
-  const isDeletedFromSnapshot = difference.deletedFromSnapshot.length > 0;
+  const isDeletedFromMain = difference.deletedFromMain.length > 0
+  const hasNewYoutubeVideos = newFormattedVideos.length > 0
+  const isDeletedFromSnapshot = difference.deletedFromSnapshot.length > 0
 
   // -----------------------------------------------------------------------------------------
 
@@ -119,106 +140,117 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const playlistItemsIDsToDelete = findPlaylistItemsIDsInSnapshotToDelete(
       difference.deletedFromMain,
       snapshotData,
-    );
+    )
 
     //* delete request to youtube playlist (remove videos deleted in notion)
-    stream.on("deletingFromYoutube", function (event) {
+    stream.on('deletingFromYoutube', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
           message: syncMessage.deleting,
         })}\n\n`,
-      );
-    });
-    stream.emit("deletingFromYoutube", "syncEvent");
+      )
+    })
+    stream.emit('deletingFromYoutube', 'syncEvent')
 
     for (const item of playlistItemsIDsToDelete) {
-      const qs = new URLSearchParams({ id: item });
-      const res = await deleteYoutubePlaylistItem(accessToken, qs);
+      const qs = new URLSearchParams({ id: item })
+      const res = await deleteYoutubePlaylistItem(accessToken, qs)
 
       if (res.status !== 204) {
-        break;
+        break
       }
     }
 
     const notionPagesIDs = difference.deletedFromMain.map(
       (page) => page.notionPageID,
-    );
+    )
     const archivedPages = (await postDelayedRequests(
       notionPagesIDs,
       archiveNotionPage,
       350,
-    )) as PageObjectResponse[];
+      notionAccessToken,
+    )) as PageObjectResponse[]
 
     const getArchivedVideoInfo = async (
       archivedPages: PageObjectResponse[],
     ): Promise<ArchivedVideoInfo[]> => {
-      const props = archivedPages.map((page) => page.properties);
+      const props = archivedPages.map((page) => page.properties)
       const info = await Promise.all(
         props.map(async (prop) => {
           if (prop.URL) {
-            const url = prop.URL.url as string;
-            const id = getYoutubeVideoIDfromURL(url);
+            const url = prop.URL.url as string
+            const id = getYoutubeVideoIDfromURL(url)
             const baseURL =
-              "https://noembed.com/embed?url=https://www.youtube.com/watch?v=";
-            return (await fetch(baseURL + id)).json();
+              'https://noembed.com/embed?url=https://www.youtube.com/watch?v='
+            return (await fetch(baseURL + id)).json()
           }
         }),
-      );
-      return info as ArchivedVideoInfo[];
-    };
+      )
+      return info as ArchivedVideoInfo[]
+    }
 
-    const archivedVideoInfo = await getArchivedVideoInfo(archivedPages);
+    const archivedVideoInfo = await getArchivedVideoInfo(archivedPages)
 
-    stream.on("isDeletedFromMain", function (event) {
+    stream.on('isDeletedFromMain', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
           message: syncMessage.deleted,
           data: archivedVideoInfo,
         })}\n\n`,
-      );
-    });
-    stream.emit("isDeletedFromMain", "syncEvent");
+      )
+    })
+    stream.emit('isDeletedFromMain', 'syncEvent')
   }
 
   if (hasNewYoutubeVideos) {
     //* get durations for new videos
     const videosDataOptions: VideosOptions = {
-      part: "contentDetails",
-      maxResults: "50",
+      part: 'contentDetails',
+      maxResults: '50',
       id: getVideosIds(newFormattedVideos),
-    };
+    }
     const rawVideosData: RawVideoData[] = await getYoutubeVideosRecursively<
       RawVideoData[]
-    >(accessToken, "videos", videosDataOptions);
+    >(accessToken, 'videos', videosDataOptions)
 
-    const durations: VideoDuration[] = getYoutubeVideosDuration(rawVideosData);
+    const durations: VideoDuration[] = getYoutubeVideosDuration(rawVideosData)
 
     //* post to notion main DB (new video objects)
-    stream.on("addingToNotion", function (event) {
+    stream.on('addingToNotion', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
           message: syncMessage.adding,
         })}\n\n`,
-      );
-    });
-    stream.emit("addingToNotion", "syncEvent");
+      )
+    })
+    stream.emit('addingToNotion', 'syncEvent')
 
-    const newDataToMainDB = combineVideoArrays(newFormattedVideos, durations);
-    await postDelayedRequests(newDataToMainDB, postToNotionDatabase, 350);
+    const newDataToMainDB = combineVideoArrays(newFormattedVideos, durations)
+    await postDelayedRequests(
+      newDataToMainDB,
+      postToNotionDatabase,
+      350,
+      notionAccessToken,
+    )
 
     //* post to notion snapshot DB (new video objects)
-    const newDataToSnapshotDB = formatSnapshotData(newRawPlaylistItems);
-    await postDelayedRequests(newDataToSnapshotDB, postToNotionSnapshot, 350);
+    const newDataToSnapshotDB = formatSnapshotData(newRawPlaylistItems)
+    await postDelayedRequests(
+      newDataToSnapshotDB,
+      postToNotionSnapshot,
+      350,
+      notionAccessToken,
+    )
 
-    stream.on("hasNewYoutubeVideos", function (event) {
+    stream.on('hasNewYoutubeVideos', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
           message: syncMessage.added,
           data: newDataToMainDB,
         })}\n\n`,
-      );
-    });
-    stream.emit("hasNewYoutubeVideos", "syncEvent");
+      )
+    })
+    stream.emit('hasNewYoutubeVideos', 'syncEvent')
   }
 
   const accidentallyDeletedFromSnapshot = rawPlaylistItems.filter(
@@ -226,108 +258,113 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       return (
         !notionSnapshotVideosIDs.includes(video.snippet.resourceId.videoId) &&
         notionMainVideosIDs.includes(video.snippet.resourceId.videoId)
-      );
+      )
     },
-  );
+  )
 
   if (isDeletedFromSnapshot) {
     //* post to notion snapshot DB (new video objects)
 
-    stream.on("snapshotAdding", function (event) {
+    stream.on('snapshotAdding', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
           message: syncMessage.snapshotAdding,
         })}\n\n`,
-      );
-    });
-    stream.emit("snapshotAdding", "syncEvent");
+      )
+    })
+    stream.emit('snapshotAdding', 'syncEvent')
 
     const newDataToSnapshotDB = formatSnapshotData(
       accidentallyDeletedFromSnapshot,
-    );
+    )
 
-    void postDelayedRequests(newDataToSnapshotDB, postToNotionSnapshot, 350);
+    void postDelayedRequests(
+      newDataToSnapshotDB,
+      postToNotionSnapshot,
+      350,
+      notionAccessToken,
+    )
 
-    stream.on("isDeletedFromSnapshot", function (event) {
+    stream.on('isDeletedFromSnapshot', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
           message: syncMessage.snapshot,
           data: newDataToSnapshotDB,
         })}\n\n`,
-      );
-    });
-    stream.emit("isDeletedFromSnapshot", "syncEvent");
+      )
+    })
+    stream.emit('isDeletedFromSnapshot', 'syncEvent')
   }
 
   if (!isDeletedFromMain && !hasNewYoutubeVideos && !isDeletedFromSnapshot) {
-    stream.on("isSynced", function (event) {
+    stream.on('isSynced', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
           message: syncMessage.synced,
         })}\n\n`,
-      );
-    });
-    stream.emit("isSynced", "syncEvent");
+      )
+    })
+    stream.emit('isSynced', 'syncEvent')
   }
 
-  stream.on("done", function (event) {
+  stream.on('done', function (event) {
     res.write(
       `event: ${event}\ndata: ${JSON.stringify({
         message: syncMessage.done,
       })}\n\n`,
-    );
-  });
-  stream.emit("done", "syncEvent");
+    )
+  })
+  stream.emit('done', 'syncEvent')
 
   // res.end("done\n");
 }
 
-export default handler;
+export default handler
 
 export const syncMessage = {
-  comparing: "Comparing differences between notion and youtube",
-  deleting: "Deleting videos from youtube playlist",
-  adding: "Adding videos to notion database",
-  synced: "Everything is already in sync",
-  done: "Everything is in sync 🎉",
-  snapshotAdding: "Adding videos back to notion snapshot database",
+  comparing: 'Comparing differences between notion and youtube',
+  deleting: 'Deleting videos from youtube playlist',
+  adding: 'Adding videos to notion database',
+  synced: 'Everything is already in sync',
+  done: 'Everything is in sync 🎉',
+  snapshotAdding: 'Adding videos back to notion snapshot database',
 
-  deleted: "Deleted these videos from youtube playlist",
-  added: "Added these videos to notion database",
-  snapshot: "Added these videos back to notion snapshot database",
-} as const;
+  deleted: 'Deleted these videos from youtube playlist',
+  added: 'Added these videos to notion database',
+  snapshot: 'Added these videos back to notion snapshot database',
+} as const
 
 export type EventSourceDataType =
   | {
-      message: typeof syncMessage.deleted;
-      data: ArchivedVideoInfo[];
+      message: typeof syncMessage.deleted
+      data: ArchivedVideoInfo[]
     }
   | {
-      message: typeof syncMessage.added;
-      data: VideoSchema[];
+      message: typeof syncMessage.added
+      data: VideoSchema[]
     }
   | {
-      message: typeof syncMessage.snapshot;
-      data: SnapshotData;
+      message: typeof syncMessage.snapshot
+      data: SnapshotData
     }
   | {
-      message: typeof syncMessage.comparing;
+      message: typeof syncMessage.comparing
     }
   | {
-      message: typeof syncMessage.adding;
+      message: typeof syncMessage.adding
     }
   | {
-      message: typeof syncMessage.deleting;
+      message: typeof syncMessage.deleting
     }
   | {
-      message: typeof syncMessage.snapshotAdding;
+      message: typeof syncMessage.snapshotAdding
     }
   | {
-      message: typeof syncMessage.synced;
+      message: typeof syncMessage.synced
     }
   | {
-      message: typeof syncMessage.done;
-    };
+      message: typeof syncMessage.done
+    }
 
 // export type SyncMessageType = keyof typeof syncMessage;
 
