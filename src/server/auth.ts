@@ -60,7 +60,7 @@ async function refreshAccessToken(token: TokenSet) {
       return {
         ...token,
         access_token: refreshedTokens.access_token,
-        access_token_expires: Date.now() + refreshedTokens.expires_at * 1000,
+        access_token_expires: Date.now() + refreshedTokens.expires_in * 1000,
         refresh_token: refreshedTokens.refresh_token ?? token.refresh_token, // Fall back to old refresh token
       }
     }
