@@ -1,23 +1,4 @@
-import { Client } from "@notionhq/client";
-import { type QueryDatabaseResponse } from "@notionhq/client/build/src/api-endpoints";
-import { env } from "~/env.mjs";
-
-const notion = new Client({ auth: env.NOTION_SECRET });
-
-export async function getNotionData() {
-  const databaseId = env.NOTION_DATABASE_ID;
-  const mainData = await notion.databases.query({ database_id: databaseId });
-
-  const snapshot_id = env.NOTION_SNAPSHOT_ID;
-  const snapshotData = await notion.databases.query({
-    database_id: snapshot_id,
-  });
-
-  return {
-    mainData,
-    snapshotData,
-  };
-}
+import type { QueryDatabaseResponse } from "@notionhq/client/build/src/api-endpoints";
 
 export const getNotionIDs = (
   mainData: QueryDatabaseResponse,
@@ -40,14 +21,37 @@ export const getNotionIDs = (
   };
 };
 
-function getNotionDataIDs(notionData): NotionDataIDs[] {
-  return notionData.results.map((video: any) => {
+export type Video = {
+  id: string;
+  properties: {
+    URL: { url: string };
+    PlaylistItemID: {
+      rich_text: [
+        {
+          text: {
+            content: string;
+          };
+        },
+      ];
+    };
+  };
+};
+
+function getNotionDataIDs(notionData: QueryDatabaseResponse): NotionDataIDs[] {
+  //@ts-expect-error not assignable parameter
+  return notionData.results.map((video: Video) => {
     const notionPageID = video.id;
     const url = video.properties.URL.url;
     const regex = /(?:v=|\/)([a-zA-Z0-9_-]{11})/;
     const match = url.match(regex);
-    const youtubeVideoID = match[1];
-    return { notionPageID, youtubeVideoID };
+    if (match) {
+      const youtubeVideoID = match[1];
+      return { notionPageID, youtubeVideoID };
+    } else
+      return {
+        notionPageID: "",
+        youtubeVideoID: "",
+      };
   });
 }
 

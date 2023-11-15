@@ -1,7 +1,14 @@
-import { type VideoDuration, type PlaylistItem } from "../types/videoTypes";
+import type {
+  VideoDuration,
+  PlaylistItem,
+  RawPlaylistItem,
+  RawVideoData,
+} from "../types/videoTypes";
 
-export function formatPlaylistItems(videoArray: any[]): PlaylistItem[] | [] {
-  return videoArray.map((video: any) => {
+export function formatPlaylistItems(
+  videoArray: RawPlaylistItem[],
+): PlaylistItem[] | [] {
+  return videoArray.map((video: RawPlaylistItem) => {
     const videoId = video.snippet.resourceId.videoId;
     const title = video.snippet.title;
     const thumbnail = video.snippet.thumbnails.high.url;
@@ -18,8 +25,10 @@ export function formatPlaylistItems(videoArray: any[]): PlaylistItem[] | [] {
   });
 }
 
-export function getYoutubeVideosDuration(videoArray: any[]): VideoDuration[] {
-  return videoArray.map((video: any) => {
+export function getYoutubeVideosDuration(
+  videoArray: RawVideoData[],
+): VideoDuration[] {
+  return videoArray.map((video: RawVideoData) => {
     const duration = video.contentDetails.duration;
     const parsedDuration = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
 
@@ -27,15 +36,15 @@ export function getYoutubeVideosDuration(videoArray: any[]): VideoDuration[] {
     let minutes = 0;
     let seconds = 0;
 
-    if (parsedDuration[1]) {
+    if (parsedDuration?.[1]) {
       hours = parseInt(parsedDuration[1].replace("H", ""));
     }
 
-    if (parsedDuration[2]) {
+    if (parsedDuration?.[2]) {
       minutes = parseInt(parsedDuration[2].replace("M", ""));
     }
 
-    if (parsedDuration[3]) {
+    if (parsedDuration?.[3]) {
       seconds = parseInt(parsedDuration[3].replace("S", ""));
     }
 

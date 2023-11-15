@@ -1,4 +1,4 @@
-import { type VideosOptions } from "./types/videoTypes";
+import type { VideosOptions } from "../types/videoTypes";
 
 const ENDPOINT = {
   playlistItems: "playlistItems",
@@ -22,14 +22,14 @@ export async function getYoutubeVideos<T>(
     },
   });
 
-  // console.log("RES================>", await res.json());
-
   if (!res.ok) {
     throw new Error(res.statusText);
   }
 
   return res.json() as Promise<T>;
 }
+
+// ------------------------------------------
 
 export async function deleteYoutubePlaylistItem(
   accessToken: string,

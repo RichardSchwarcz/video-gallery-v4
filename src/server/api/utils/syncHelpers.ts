@@ -1,30 +1,35 @@
+import type { QueryDatabaseResponse } from '@notionhq/client/build/src/api-endpoints'
 import {
   type RawPlaylistItem,
   type PlaylistItem,
   type VideoDuration,
   type VideoSchema,
-} from "../types/videoTypes";
-import { type NotionDataIDs } from "./notion";
-import { getYoutubeVideoIDfromURL } from "./youtubeHelpers";
+} from '../types/videoTypes'
+import type { Video, NotionDataIDs } from './notionHelpers'
+import { getYoutubeVideoIDfromURL } from './youtubeHelpers'
 
 export function findPlaylistItemsIDsInSnapshotToDelete(
   difference: NotionDataIDs[],
-  notionSnapshotData: any,
+  notionSnapshotData: QueryDatabaseResponse,
 ): string[] {
-  const videosIDs = difference.map((item) => item.youtubeVideoID);
+  const videosIDs = difference.map((item) => item.youtubeVideoID)
 
   const snapshotDataToDelete = notionSnapshotData.results.filter(
-    (video: any) => {
-      const URL: string = video.properties.URL.url;
-      const ID = getYoutubeVideoIDfromURL(URL);
-      return ID ? videosIDs.includes(ID) : null;
+    //@ts-expect-error not assignable parameter
+    (video: Video) => {
+      const URL: string = video.properties.URL.url
+      const ID = getYoutubeVideoIDfromURL(URL)
+      return ID ? videosIDs.includes(ID) : null
     },
-  );
+  )
 
-  const playlistItemsIDs: string[] = snapshotDataToDelete.map((video: any) => {
-    return video.properties.PlaylistItemID.rich_text[0].text.content;
-  });
-  return playlistItemsIDs;
+  const playlistItemsIDs: string[] = snapshotDataToDelete.map(
+    //@ts-expect-error not assignable parameter
+    (video: Video) => {
+      return video.properties.PlaylistItemID.rich_text[0].text.content
+    },
+  )
+  return playlistItemsIDs
 }
 
 // TODO check lodash/difference(by)
@@ -35,58 +40,58 @@ export function findDeletedVideos(
   const difference: DifferenceObject = {
     deletedFromMain: [],
     deletedFromSnapshot: [],
-  };
+  }
 
   const mainDBvideosID = mainData.map((mainItem) => {
-    return mainItem.youtubeVideoID;
-  });
+    return mainItem.youtubeVideoID
+  })
 
   const snapshotDBvideosID = snapshotData.map((snapshotItem) => {
-    return snapshotItem.youtubeVideoID;
-  });
+    return snapshotItem.youtubeVideoID
+  })
 
   // video deleted from main DB but still in snapshot
   snapshotData.forEach((snapshotItem) => {
     if (!mainDBvideosID.includes(snapshotItem.youtubeVideoID)) {
-      difference.deletedFromMain.push(snapshotItem);
+      difference.deletedFromMain.push(snapshotItem)
     }
-  });
+  })
 
   // video deleted from snapshot but still in main DB
   mainData.forEach((mainItem) => {
     if (!snapshotDBvideosID.includes(mainItem.youtubeVideoID)) {
-      difference.deletedFromSnapshot.push(mainItem);
+      difference.deletedFromSnapshot.push(mainItem)
     }
-  });
+  })
 
-  return difference;
+  return difference
 }
 
 export type DifferenceObject = {
-  deletedFromMain: NotionDataIDs[];
-  deletedFromSnapshot: NotionDataIDs[];
-};
+  deletedFromMain: NotionDataIDs[]
+  deletedFromSnapshot: NotionDataIDs[]
+}
 
 export function combineVideoArrays(
   formattedVideos: PlaylistItem[],
   durations: VideoDuration[],
 ): VideoSchema[] {
-  const combinedArray = [];
+  const combinedArray = []
 
   for (const videoInfo of formattedVideos) {
     const matchingDuration = durations.find(
       (duration: VideoDuration) => duration.id === videoInfo.videoId,
-    );
+    )
 
     if (matchingDuration) {
       combinedArray.push({
         ...videoInfo,
         duration: matchingDuration.duration,
-      });
+      })
     }
   }
 
-  return combinedArray;
+  return combinedArray
 }
 
 export function formatSnapshotData(rawPlaylistItems: RawPlaylistItem[]) {
@@ -95,29 +100,32 @@ export function formatSnapshotData(rawPlaylistItems: RawPlaylistItem[]) {
       title: playlistItem.snippet.title,
       url: `https://www.youtube.com/watch?v=${playlistItem.snippet.resourceId.videoId}`,
       playlistItemId: playlistItem.id,
-    };
-  });
+    }
+  })
 }
+
+export type SnapshotData = ReturnType<typeof formatSnapshotData>
 
 export async function postDelayedRequests<T, U>(
   dataArray: T[],
-  requestFunction: (element: T) => Promise<U>,
+  requestFunction: (element: T, accessToken: string) => Promise<U>,
   delayBetweenRequestsMs: number,
+  accessToken: string,
 ): Promise<U[]> {
-  const result: U[] = [];
+  const result: U[] = []
 
   for (const element of dataArray) {
-    const response = await requestFunction(element);
-    result.push(response);
+    const response = await requestFunction(element, accessToken)
+    result.push(response)
 
     if (delayBetweenRequestsMs > 0) {
-      await delay(delayBetweenRequestsMs);
+      await delay(delayBetweenRequestsMs)
     }
   }
 
-  return result;
+  return result
 }
 
 async function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
