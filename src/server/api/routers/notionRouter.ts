@@ -1,117 +1,139 @@
-import { PLAYLIST_ID } from "~/server/constants";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { PLAYLIST_ID } from '~/server/constants'
+import { createTRPCRouter, protectedProcedure } from '../trpc'
 import type {
   PlaylistItem,
   RawPlaylistItem,
   RawVideoData,
   VideoDuration,
   VideosOptions,
-} from "../types/videoTypes";
-import { getYoutubeVideosRecursively } from "../services/youtubeAPIFunctions";
+} from '../types/videoTypes'
+import { getYoutubeVideosRecursively } from '../services/youtubeAPIFunctions'
 import {
   formatPlaylistItems,
   getVideosIds,
   getYoutubeVideosDuration,
-} from "../utils/youtubeHelpers";
+} from '../utils/youtubeHelpers'
 import {
   combineVideoArrays,
   formatSnapshotData,
   postDelayedRequests,
-} from "../utils/syncHelpers";
+} from '../utils/syncHelpers'
 import {
   postToNotionDatabase,
   postToNotionSnapshot,
-} from "../services/notionAPIFunctions";
-import { env } from "~/env.mjs";
+} from '../services/notionAPIFunctions'
+import { env } from '~/env.mjs'
+import { prisma } from '~/server/db'
 
 export const notionRouter = createTRPCRouter({
   handleInitialLoad: protectedProcedure.query(async ({ ctx }) => {
-    const accessToken = ctx.session.token.access_token;
+    const accessToken = ctx.session.token.access_token
     if (accessToken === undefined) {
-      throw new Error("Unauthenticated");
+      throw new Error('Unauthenticated')
     }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          {
+            youtubeAccount: {
+              email: ctx.session.user.email,
+            },
+          },
+          {
+            email: ctx.session.user.email,
+          },
+        ],
+      },
+      select: {
+        notionAccessTokens: true,
+      },
+    })
+
+    const notionAccessToken = user?.notionAccessTokens[0]?.access_token ?? ''
 
     try {
       // fetch all videos from playlist
       const videosOptions: VideosOptions = {
-        part: "snippet",
-        maxResults: "50",
+        part: 'snippet',
+        maxResults: '50',
         playlistId: PLAYLIST_ID,
-      };
+      }
 
       const rawPlaylistItems: RawPlaylistItem[] =
         await getYoutubeVideosRecursively(
           accessToken,
-          "playlistItems",
+          'playlistItems',
           videosOptions,
-        );
+        )
 
       const formattedVideos: PlaylistItem[] =
-        formatPlaylistItems(rawPlaylistItems);
+        formatPlaylistItems(rawPlaylistItems)
 
       // fetch videos by ID. In playlist items there is no duration property
       const videosDataOptions: VideosOptions = {
-        part: "contentDetails",
-        maxResults: "50",
+        part: 'contentDetails',
+        maxResults: '50',
         id: getVideosIds(formattedVideos),
-      };
+      }
 
       const rawVideosData: RawVideoData[] = await getYoutubeVideosRecursively(
         accessToken,
-        "videos",
+        'videos',
         videosDataOptions,
-      );
+      )
 
-      const durations: VideoDuration[] =
-        getYoutubeVideosDuration(rawVideosData);
+      const durations: VideoDuration[] = getYoutubeVideosDuration(rawVideosData)
 
-      const notionSnapshotData = formatSnapshotData(rawPlaylistItems);
-      const notionMainData = combineVideoArrays(formattedVideos, durations);
+      const notionSnapshotData = formatSnapshotData(rawPlaylistItems)
+      const notionMainData = combineVideoArrays(formattedVideos, durations)
 
       // load notion database
-      console.log("Starting API requests...");
+      console.log('Starting API requests...')
       try {
         const post = await postDelayedRequests(
           notionMainData,
           postToNotionDatabase,
           350,
-        );
-        console.log("API requests completed:", post);
+          notionAccessToken,
+        )
+        console.log('API requests completed:', post)
       } catch (error) {
-        console.error("Error:", error);
+        console.error('Error:', error)
       } finally {
-        console.log("All operations completed.");
+        console.log('All operations completed.')
       }
 
       // create notion snapshot
-      console.log("Starting API requests...");
+      console.log('Starting API requests...')
       try {
         const post = await postDelayedRequests(
           notionSnapshotData,
           postToNotionSnapshot,
           350,
-        );
-        console.log("API requests completed:", post);
+          notionAccessToken,
+        )
+        console.log('API requests completed:', post)
       } catch (error) {
-        console.error("Error:", error);
+        console.error('Error:', error)
       } finally {
-        console.log("All operations completed.");
+        console.log('All operations completed.')
       }
     } catch (error) {
-      console.log(error);
+      console.log(error)
     }
   }),
   getOAuthURL: protectedProcedure.query(() => {
-    const rootURL = "https://api.notion.com/v1/oauth/authorize";
+    const rootURL = 'https://api.notion.com/v1/oauth/authorize'
     const options = {
       client_id: env.NOTION_CLIENT_ID,
-      response_type: "code",
-      owner: "user",
+      response_type: 'code',
+      owner: 'user',
       redirect_uri: env.NOTION_REDIRECT_URI,
-    };
-    const qs = new URLSearchParams(options);
-    const url = `${rootURL}?${qs.toString()}`;
+    }
+    const qs = new URLSearchParams(options)
+    const url = `${rootURL}?${qs.toString()}`
 
-    return url;
+    return url
   }),
-});
+})
