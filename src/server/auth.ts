@@ -81,7 +81,6 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
     },
     callbacks: {
       signIn: async ({ profile }) => {
-        console.log({ profile })
         /* 
         Session is returned when user is signed in and is giving a permission for youtube scope
         Session is needed to match youtube account to main account. Because these accounts could be different,
@@ -130,7 +129,6 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
       },
       jwt: ({ token, account }) => {
         if (account) {
-          console.log({ account })
           token = {
             ...token,
             access_token: account.access_token,
@@ -140,7 +138,8 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
           }
         }
         if (Date.now() > token.access_token_expires) {
-          return refreshAccessToken(token)
+          // return refreshAccessToken(token)
+          console.log('ta nemam')
         }
         return token
       },
