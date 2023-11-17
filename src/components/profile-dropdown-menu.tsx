@@ -1,4 +1,4 @@
-import { CreditCard, LifeBuoy, LogOut, Settings, User } from "lucide-react";
+import { CreditCard, LifeBuoy, LogOut, Settings, User } from 'lucide-react'
 
 import {
   DropdownMenu,
@@ -8,24 +8,26 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { TooltipWrapper } from "./tooltip-wrapper";
-import type { Session } from "next-auth";
-import { signOut } from "next-auth/react";
+} from './ui/dropdown-menu'
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
+import { TooltipWrapper } from './tooltip-wrapper'
+import type { Session } from 'next-auth'
+import { signOut } from 'next-auth/react'
+import { useRouter } from 'next/router'
 
 type PropsType = {
-  sessionData: Session | null;
-};
+  sessionData: Session | null
+}
 
 export function ProfileDropdownMenu({ sessionData }: PropsType) {
+  const router = useRouter()
   return (
     <DropdownMenu>
       <TooltipWrapper text="Account">
         <DropdownMenuTrigger asChild>
           <Avatar className="cursor-pointer rounded-md">
             <AvatarImage
-              src={sessionData?.user.image ? sessionData?.user.image : ""}
+              src={sessionData?.user.image ? sessionData?.user.image : ''}
             />
             <AvatarFallback>VG</AvatarFallback>
           </Avatar>
@@ -43,7 +45,10 @@ export function ProfileDropdownMenu({ sessionData }: PropsType) {
             <CreditCard className="mr-2 h-4 w-4" />
             <span>Billing</span>
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer">
+          <DropdownMenuItem
+            onClick={() => void router.push('/app/settings')}
+            className="cursor-pointer"
+          >
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
           </DropdownMenuItem>
@@ -63,5 +68,5 @@ export function ProfileDropdownMenu({ sessionData }: PropsType) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }
