@@ -88,11 +88,9 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
         */
         const session = await getServerSession(req, res, authOptions)
 
-        // TODO uncomment when DB is available
-        // const user = await prisma.user.findFirst({
-        //   where: { email: { contains: profile?.email } },
-        // });
-        const user = true
+        const user = await prisma.user.findFirst({
+          where: { email: { contains: profile?.email } },
+        })
         // !!!---------------------------------------------------
 
         if (profile) {
@@ -139,7 +137,6 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
         }
         if (Date.now() > token.access_token_expires) {
           // return refreshAccessToken(token)
-          console.log('ta nemam')
         }
         return token
       },

@@ -6,8 +6,6 @@ import {
 import { type VideoSchema } from '../types/videoTypes'
 import { env } from '~/env.mjs'
 
-// TODO get access token from DB when available
-
 // ------------- FUNCTIONS ----------------
 
 export async function getNotionData(access_token: string) {
