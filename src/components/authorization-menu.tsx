@@ -1,35 +1,40 @@
-import { Lock } from "lucide-react";
+import { Lock } from 'lucide-react'
 
-import { Button } from "./ui/button";
+import { Button } from './ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import router from "next/router";
-import Notion from "./icons/notion";
-import Youtube from "./icons/youtube";
-import { TooltipWrapper } from "./tooltip-wrapper";
-import { cn } from "~/lib/utils";
-import type { Session } from "next-auth/core/types";
-import { isYoutubeAuthorized } from "~/utils/auth";
+} from './ui/dropdown-menu'
+import router from 'next/router'
+import Notion from './icons/notion'
+import Youtube from './icons/youtube'
+import { TooltipWrapper } from './tooltip-wrapper'
+import { cn } from '~/lib/utils'
+import type { Session } from 'next-auth/core/types'
+import { isYoutubeAuthorized } from '~/utils/auth'
+import { api } from '~/utils/api'
 
 type PropsType = {
-  sessionData: Session | null;
-};
+  sessionData: Session | null
+}
 
 export function AuthorizationMenu({ sessionData }: PropsType) {
+  const notionAccessToken = api.notion.getNotionToken.useQuery(undefined)
+  // TODO if user has notion token but it's not valid, sync will throw and token will be deleted
   const isNotionAuthorized = () => {
-    return true;
-  };
+    if (notionAccessToken.data?.access_token) {
+      return true
+    }
+  }
   const isAuthNeeded = (sessionData: Session | null) => {
     if (isYoutubeAuthorized(sessionData) && isNotionAuthorized()) {
-      return false;
+      return false
     } else {
-      return true;
+      return true
     }
-  };
+  }
   return (
     <DropdownMenu>
       <TooltipWrapper text="Authorization">
@@ -39,8 +44,8 @@ export function AuthorizationMenu({ sessionData }: PropsType) {
             size="icon"
             className={cn(
               isAuthNeeded(sessionData)
-                ? "border-2 border-red-500 bg-red-100"
-                : "",
+                ? 'border-2 border-red-500 bg-red-100'
+                : '',
             )}
           >
             <Lock className="h-[1.2rem] w-[1.2rem]" />
@@ -51,7 +56,7 @@ export function AuthorizationMenu({ sessionData }: PropsType) {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem
           className="cursor-pointer"
-          onClick={() => void router.push("/app/auth/youtube")}
+          onClick={() => void router.push('/app/auth/youtube')}
         >
           <div className="flex w-full justify-between">
             <div className="flex">
@@ -67,7 +72,7 @@ export function AuthorizationMenu({ sessionData }: PropsType) {
         </DropdownMenuItem>
         <DropdownMenuItem
           className="cursor-pointer justify-between"
-          onClick={() => void router.push("/app/auth/notion")}
+          onClick={() => void router.push('/app/auth/notion')}
         >
           <div className="flex w-full justify-between">
             <div className="flex">
@@ -83,5 +88,5 @@ export function AuthorizationMenu({ sessionData }: PropsType) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }
