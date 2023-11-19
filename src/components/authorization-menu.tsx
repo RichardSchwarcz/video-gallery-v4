@@ -24,7 +24,7 @@ export function AuthorizationMenu({ sessionData }: PropsType) {
   const notionAccessToken = api.notion.getNotionToken.useQuery(undefined)
   // TODO if user has notion token but it's not valid, sync will throw and token will be deleted
   const isNotionAuthorized = () => {
-    if (notionAccessToken.data?.access_token) {
+    if (notionAccessToken.data) {
       return true
     }
   }
