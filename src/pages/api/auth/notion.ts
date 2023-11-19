@@ -30,16 +30,16 @@ export default async function handler(
         ],
       },
       select: {
-        notionAccessTokens: true,
+        notionAccessToken: true,
         id: true,
       },
     })
 
     if (tokens) {
-      if (user?.notionAccessTokens[0]?.access_token === tokens.access_token) {
+      if (user?.notionAccessToken?.access_token === tokens.access_token) {
         res.status(200).redirect('/app')
       }
-      if (user?.notionAccessTokens[0]?.access_token !== tokens.access_token) {
+      if (user?.notionAccessToken?.access_token !== tokens.access_token) {
         await prisma.notionToken.create({
           data: {
             access_token: tokens.access_token,
