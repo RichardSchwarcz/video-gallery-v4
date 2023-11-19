@@ -9,14 +9,14 @@ datasource db {
 }
 
 model User {
-  id                 String          @id @default(cuid())
-  createdAt          DateTime        @default(now())
-  name               String?
-  email              String?         @unique
-  emailVerified      Boolean
-  picture            String?
-  notionAccessTokens NotionToken[]
-  youtubeAccount     YoutubeAccount?
+  id                String          @id @default(cuid())
+  createdAt         DateTime        @default(now())
+  name              String?
+  email             String?         @unique
+  emailVerified     Boolean
+  picture           String?
+  notionAccessToken NotionToken?
+  youtubeAccount    YoutubeAccount?
 }
 
 model YoutubeAccount {
@@ -41,6 +41,6 @@ model NotionToken {
   owner_id               String
   duplicated_template_id String?
   request_id             String
-  userId                 String?
+  userId                 String? @unique
   user                   User?   @relation(fields: [userId], references: [id])
 }
