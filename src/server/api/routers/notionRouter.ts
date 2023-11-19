@@ -46,11 +46,11 @@ export const notionRouter = createTRPCRouter({
         ],
       },
       select: {
-        notionAccessTokens: true,
+        notionAccessToken: true,
       },
     })
 
-    const notionAccessToken = user?.notionAccessTokens[0]?.access_token ?? ''
+    const notionAccessToken = user?.notionAccessToken?.access_token ?? ''
 
     try {
       // fetch all videos from playlist
@@ -135,5 +135,28 @@ export const notionRouter = createTRPCRouter({
     const url = `${rootURL}?${qs.toString()}`
 
     return url
+  }),
+  getNotionToken: protectedProcedure.query(async ({ ctx }) => {
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          {
+            youtubeAccount: {
+              email: ctx.session.user.email,
+            },
+          },
+          {
+            email: ctx.session.user.email,
+          },
+        ],
+      },
+      select: {
+        notionAccessToken: true,
+      },
+    })
+    // TODO Try zod validation?
+    if (user?.notionAccessToken) {
+      return user.notionAccessToken
+    }
   }),
 })
