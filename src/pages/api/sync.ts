@@ -40,6 +40,7 @@ import EventEmitter from 'events'
 import { isYoutubeAuthorized } from '~/utils/auth'
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints'
 import { prisma } from '~/server/db'
+import { usersNotionAccessTokenSchema } from '~/server/api/types/zodSchema'
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession({ req })
@@ -74,11 +75,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       ],
     },
     select: {
-      notionAccessTokens: true,
+      notionAccessToken: true,
     },
   })
 
-  const notionAccessToken = user?.notionAccessTokens[0]?.access_token ?? ''
+  const usersNotionData = usersNotionAccessTokenSchema.parse(
+    user?.notionAccessToken,
+  )
+
+  const notionAccessToken = usersNotionData.access_token
 
   stream.on('comparingDifference', function (event) {
     res.write(

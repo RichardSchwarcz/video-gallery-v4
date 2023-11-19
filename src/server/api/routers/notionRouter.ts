@@ -24,6 +24,7 @@ import {
 } from '../services/notionAPIFunctions'
 import { env } from '~/env.mjs'
 import { prisma } from '~/server/db'
+import { usersNotionAccessTokenSchema } from '../types/zodSchema'
 
 export const notionRouter = createTRPCRouter({
   handleInitialLoad: protectedProcedure.query(async ({ ctx }) => {
@@ -50,7 +51,11 @@ export const notionRouter = createTRPCRouter({
       },
     })
 
-    const notionAccessToken = user?.notionAccessToken?.access_token ?? ''
+    const usersNotionData = usersNotionAccessTokenSchema.parse(
+      user?.notionAccessToken,
+    )
+
+    const notionAccessToken = usersNotionData.access_token
 
     try {
       // fetch all videos from playlist
@@ -154,9 +159,11 @@ export const notionRouter = createTRPCRouter({
         notionAccessToken: true,
       },
     })
-    // TODO Try zod validation?
-    if (user?.notionAccessToken) {
-      return user.notionAccessToken
-    }
+
+    const usersNotionData = usersNotionAccessTokenSchema.parse(
+      user?.notionAccessToken,
+    )
+
+    return usersNotionData.access_token
   }),
 })
