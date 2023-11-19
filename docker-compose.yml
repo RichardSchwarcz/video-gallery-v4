@@ -6,13 +6,13 @@ services:
     image: timescale/timescaledb:latest-pg15
     restart: always
     ports:
-      - '${DB_PORT}:5440'
+      - '${DB_PORT}:5432'
     environment:
       POSTGRES_USER: 'postgres'
       POSTGRES_PASSWORD: 'postgres'
       POSTGRES_DB: '${DB_NAME}'
     volumes:
-      - video-gallery-v4-db-volume:/var/lib/postgresql/data
+      - vg-v4-db-volume:/var/lib/postgresql/data
 
 volumes:
-  video-gallery-v4-db-volume:
+  vg-v4-db-volume:
