@@ -295,11 +295,11 @@ function App() {
                 <div className="flex flex-col gap-2 pt-2">
                   {state.added.data.length > 1 ? (
                     <div className="rounded-md bg-gradient-to-tr from-lime-600 to-emerald-600 p-2 text-slate-100">
-                      Added {state.added.data.length} videos to youtube
+                      Added {state.added.data.length} videos to Notion
                     </div>
                   ) : (
                     <div className="rounded-md bg-gradient-to-tr from-lime-600 to-emerald-600 p-2 text-slate-100">
-                      Added {state.added.data.length} video to youtube
+                      Added {state.added.data.length} video to Notion
                     </div>
                   )}
 
