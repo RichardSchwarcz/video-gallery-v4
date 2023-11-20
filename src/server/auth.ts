@@ -9,6 +9,7 @@ import GoogleProvider from 'next-auth/providers/google'
 
 import { env } from '~/env.mjs'
 import { prisma } from './db'
+import { z } from 'zod'
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -88,39 +89,52 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
         */
         const session = await getServerSession(req, res, authOptions)
 
-        const user = await prisma.user.findFirst({
-          where: { email: { contains: profile?.email } },
+        // profile zod schema
+        const profileSchema = z.object({
+          name: z.string(),
+          email: z.string().email(),
+          email_verified: z.boolean(),
+          picture: z.string().url(),
         })
-        // !!!---------------------------------------------------
 
-        if (profile) {
-          if (!user && !session) {
-            await prisma.user.create({
-              data: {
-                name: profile.name,
-                email: profile.email,
-                emailVerified: profile.email_verified,
-                picture: profile.picture,
-              },
-            })
-            return true
-          }
-          if (!user && session) {
-            // find user id of main user which has active session
-            const mainUser = await prisma.user.findFirst({
-              where: { email: { contains: session.user.email } },
-            })
-            await prisma.youtubeAccount.create({
-              data: {
-                name: profile.name,
-                email: profile.email,
-                emailVerified: profile.email_verified,
-                picture: profile.picture,
-                userId: mainUser?.id,
-              },
-            })
-            return true
-          }
+        // validate profile
+        const profileData = profileSchema.parse(profile)
+
+        const user = await prisma.user.findFirst({
+          where: {
+            email: profileData.email,
+          },
+        })
+
+        if (!user && !session) {
+          await prisma.user.create({
+            data: {
+              name: profileData.name,
+              email: profileData.email,
+              emailVerified: profileData.email_verified,
+              picture: profileData.picture,
+            },
+          })
+          return true
+        }
+
+        if (!user && session) {
+          // find user id of main user which has active session
+          const email = session.user.email ?? ''
+
+          const mainUser = await prisma.user.findFirst({
+            where: { email: { contains: email } },
+          })
+
+          await prisma.youtubeAccount.create({
+            data: {
+              name: profileData.name,
+              email: profileData.email,
+              emailVerified: profileData.email_verified,
+              picture: profileData.picture,
+              userId: mainUser?.id,
+            },
+          })
           return true
         }
         return true
