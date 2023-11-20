@@ -1,5 +1,5 @@
-import { createEnv } from "@t3-oss/env-nextjs";
-import { z } from "zod";
+import { createEnv } from '@t3-oss/env-nextjs'
+import { z } from 'zod'
 
 export const env = createEnv({
   /**
@@ -9,15 +9,14 @@ export const env = createEnv({
   server: {
     POSTGRES_PRISMA_URL: z.string().url(),
     NODE_ENV: z
-      .enum(["development", "test", "production"])
-      .default("development"),
+      .enum(['development', 'test', 'production'])
+      .default('development'),
     GOOGLE_CLIENT_ID: z.string().min(1),
     GOOGLE_CLIENT_SECRET: z.string().min(1),
     GOOGLE_REDIRECT_URI: z.string().min(1),
 
     NOTION_DATABASE_ID: z.string().min(1),
     NOTION_SNAPSHOT_ID: z.string().min(1),
-    NOTION_ACCESS_TOKEN: z.string().min(1),
 
     NOTION_CLIENT_ID: z.string().min(1),
     NOTION_CLIENT_SECRET: z.string().min(1),
@@ -49,7 +48,6 @@ export const env = createEnv({
 
     NOTION_DATABASE_ID: process.env.NOTION_DATABASE_ID,
     NOTION_SNAPSHOT_ID: process.env.NOTION_SNAPSHOT_ID,
-    NOTION_ACCESS_TOKEN: process.env.NOTION_ACCESS_TOKEN,
 
     NOTION_CLIENT_ID: process.env.NOTION_CLIENT_ID,
     NOTION_CLIENT_SECRET: process.env.NOTION_CLIENT_SECRET,
@@ -63,4 +61,4 @@ export const env = createEnv({
    * useful for Docker builds.
    */
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
-});
+})
