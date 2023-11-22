@@ -17,6 +17,7 @@ model User {
   picture           String?
   notionAccessToken NotionToken?
   youtubeAccount    YoutubeAccount?
+  settings          Settings?
 }
 
 model YoutubeAccount {
@@ -43,4 +44,13 @@ model NotionToken {
   request_id             String
   userId                 String? @unique
   user                   User?   @relation(fields: [userId], references: [id])
+}
+
+model Settings {
+  id                 String  @id @default(cuid())
+  youtubePlaylistId  String? @unique
+  notionMainDbId     String? @unique
+  notionSnapshotDbId String? @unique
+  userId             String? @unique
+  user               User?   @relation(fields: [userId], references: [id])
 }
