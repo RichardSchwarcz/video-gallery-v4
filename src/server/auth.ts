@@ -102,7 +102,16 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
 
         const user = await prisma.user.findFirst({
           where: {
-            email: profileData.email,
+            OR: [
+              {
+                youtubeAccount: {
+                  email: profileData.email,
+                },
+              },
+              {
+                email: profileData.email,
+              },
+            ],
           },
         })
 
