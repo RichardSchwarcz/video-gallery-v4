@@ -2,9 +2,6 @@ import { useSession } from 'next-auth/react'
 import { useReducer, useState } from 'react'
 import { Button } from '~/components/ui/button'
 import Link from 'next/link'
-import { ModeToggle } from '~/components/mode-toggle'
-import { ProfileDropdownMenu } from '~/components/profile-dropdown-menu'
-import { AuthorizationMenu } from '~/components/authorization-menu'
 import { ButtonLoading } from '~/components/ui/button-loading'
 import { type EventSourceDataType, syncMessage } from '../api/sync'
 import Image from 'next/image'
@@ -12,6 +9,7 @@ import { TooltipWrapper } from '~/components/tooltip-wrapper'
 import { truncateTitle } from '~/utils/truncateVideoTitle'
 import { initialState, reducer } from '~/utils/reducer'
 import SyncStatusMessage from '~/components/sync-status-message'
+import Navbar from '~/components/navbar'
 
 function App() {
   const { status, data: sessionData } = useSession()
@@ -119,12 +117,8 @@ function App() {
   }
 
   return (
-    <div className="p-4">
-      <nav className="flex flex-row-reverse items-center gap-2 rounded-md">
-        <ProfileDropdownMenu sessionData={sessionData} />
-        <AuthorizationMenu sessionData={sessionData} />
-        <ModeToggle />
-      </nav>
+    <div className="container mx-auto pt-6">
+      <Navbar sessionData={sessionData} />
 
       <div className="mx-auto flex w-fit flex-col items-center rounded-md border border-slate-500 p-4">
         <div>
