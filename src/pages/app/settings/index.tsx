@@ -18,6 +18,7 @@ import { ProfileDropdownMenu } from '~/components/profile-dropdown-menu'
 import { AuthorizationMenu } from '~/components/authorization-menu'
 import { ModeToggle } from '~/components/mode-toggle'
 import { useSession } from 'next-auth/react'
+import Navbar from '~/components/navbar'
 
 function Settings() {
   const { status, data: sessionData } = useSession()
@@ -57,12 +58,8 @@ function Settings() {
   })
 
   return (
-    <div className="p-4">
-      <nav className="flex flex-row-reverse items-center gap-2 rounded-md">
-        <ProfileDropdownMenu sessionData={sessionData} />
-        <AuthorizationMenu sessionData={sessionData} />
-        <ModeToggle />
-      </nav>
+    <div className="container mx-auto pt-6">
+      <Navbar sessionData={sessionData} />
       <div className="text-lg font-bold">Settings</div>
       <div className="w-1/3">
         <Form {...form}>
