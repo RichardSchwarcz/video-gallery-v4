@@ -160,6 +160,8 @@ export const notionRouter = createTRPCRouter({
       },
     })
 
+    //TODO if no user, throw error
+
     const usersNotionData = usersNotionAccessTokenSchema.parse(
       user?.notionAccessToken,
     )
