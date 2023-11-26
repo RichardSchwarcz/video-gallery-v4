@@ -8,20 +8,14 @@ import Navbar from '~/components/navbar'
 import FormItemWrapper from '~/components/form-item-wrapper'
 import { formSchema } from '~/lib/validations/form'
 import type { z } from 'zod'
+import { ButtonLoading } from '~/components/ui/button-loading'
+import { TooltipWrapper } from '~/components/tooltip-wrapper'
 
 function Settings() {
-  const { status, data: sessionData } = useSession()
-  const { data, mutate, isLoading } = api.settings.setIds.useMutation({
-    onSuccess: () => {
-      console.log('success')
-    },
-    onError: () => {
-      console.log('error')
-    },
-  })
+  const { data: sessionData } = useSession()
+  const { mutate, isLoading } = api.settings.setIds.useMutation()
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log({ values })
     mutate(values)
   }
 
@@ -79,9 +73,13 @@ function Settings() {
                   />
                   <div className="flex justify-end gap-4">
                     {isLoading ? (
-                      <Button disabled>Loading...</Button>
-                    ) : (
+                      <ButtonLoading loadingText="Please wait" />
+                    ) : form.formState.isValid ? (
                       <Button type="submit">Save</Button>
+                    ) : (
+                      <Button disabled aria-disabled>
+                        Save
+                      </Button>
                     )}
                     <div className="w-10" />
                   </div>
