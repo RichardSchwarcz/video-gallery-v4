@@ -116,7 +116,7 @@ function App() {
       <div className="mx-auto flex w-fit flex-col items-center">
         <div>
           {isSyncing ? (
-            <ButtonLoading />
+            <ButtonLoading loadingText="Syncing" />
           ) : (
             <Button onClick={() => handleSync()} className="w-64">
               <SyncIcon />
@@ -124,7 +124,7 @@ function App() {
             </Button>
           )}
         </div>
-        <div className="shadow-messages mt-4 rounded-md border border-slate-300 p-2">
+        <div className="mt-4 rounded-md border border-slate-300 p-2 shadow-messages">
           <p>Go to settings and give consent and fill IDs</p>
         </div>
       </div>
