@@ -113,7 +113,7 @@ function App() {
     <div className="container mx-auto pt-6">
       <Navbar sessionData={sessionData} />
 
-      <div className="mx-auto flex w-fit flex-col items-center pt-4">
+      <div className="mx-auto flex w-fit flex-col items-center">
         <div>
           {isSyncing ? (
             <ButtonLoading />
