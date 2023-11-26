@@ -5,6 +5,7 @@ import { FormControl, FormItem, FormMessage } from './ui/form'
 import { Input } from './ui/input'
 import type { formSchema } from '~/lib/validations/form'
 import type { z } from 'zod'
+import { TooltipWrapper } from './tooltip-wrapper'
 
 type FormValues = z.infer<typeof formSchema>
 
@@ -16,17 +17,21 @@ type fieldType =
 function FormItemWrapper({ field }: { field: fieldType }) {
   let title = ''
   let placeholder = ''
+  let tooltip = ''
   if (field.name === 'youtubePlaylistId') {
     title = 'Youtube playlist ID'
     placeholder = 'Your unique Youtube playlist ID'
+    tooltip = 'How to get Youtube playlist ID'
   }
   if (field.name === 'notionMainDbId') {
     title = 'Notion database ID'
     placeholder = 'Your unique Notion database ID'
+    tooltip = 'How to get Notion database ID'
   }
   if (field.name === 'notionSnapshotDbId') {
     title = 'Notion snapshot ID'
     placeholder = 'Your unique Notion snapshot ID'
+    tooltip = 'How to get Notion snapshot ID'
   }
   return (
     <FormItem>
@@ -40,9 +45,15 @@ function FormItemWrapper({ field }: { field: fieldType }) {
           </FormControl>
         </div>
         <div className="flex-none">
-          <Button size={'icon'} variant={'ghost'}>
-            <HelpIcon />
-          </Button>
+          <TooltipWrapper text={tooltip}>
+            <Button
+              size={'icon'}
+              variant={'ghost'}
+              onClick={(e) => e.preventDefault()}
+            >
+              <HelpIcon />
+            </Button>
+          </TooltipWrapper>
         </div>
       </div>
       <div className="flex h-8 items-center">
