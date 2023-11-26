@@ -40,7 +40,7 @@ import EventEmitter from 'events'
 import { isYoutubeAuthorized } from '~/utils/auth'
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints'
 import { prisma } from '~/server/db'
-import { usersNotionAccessTokenSchema } from '~/server/api/types/zodSchema'
+import { usersNotionAccessTokenSchema } from '~/lib/validations/user'
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession({ req })

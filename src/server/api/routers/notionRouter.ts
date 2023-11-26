@@ -24,7 +24,7 @@ import {
 } from '../services/notionAPIFunctions'
 import { env } from '~/env.mjs'
 import { prisma } from '~/server/db'
-import { usersNotionAccessTokenSchema } from '../types/zodSchema'
+import { usersNotionAccessTokenSchema } from '~/lib/validations/user'
 
 export const notionRouter = createTRPCRouter({
   handleInitialLoad: protectedProcedure.query(async ({ ctx }) => {
