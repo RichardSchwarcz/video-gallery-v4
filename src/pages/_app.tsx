@@ -23,9 +23,12 @@ const MyApp: AppType<{ session: Session | null }> = ({
         enableSystem
         disableTransitionOnChange
       >
-        <main className={`${inter.variable} font-sans`}>
-          <Component {...pageProps} />
-        </main>
+        <style jsx global>{`
+          html {
+            font-family: ${inter.style.fontFamily};
+          }
+        `}</style>
+        <Component {...pageProps} />
       </ThemeProvider>
     </SessionProvider>
   )
