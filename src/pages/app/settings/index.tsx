@@ -1,24 +1,13 @@
 import { useForm } from 'react-hook-form'
-
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '~/components/ui/form'
+import { Form, FormField } from '~/components/ui/form'
 import { Button } from '~/components/ui/button'
-import { Input } from '~/components/ui/input'
 import { api } from '~/utils/api'
-import { ProfileDropdownMenu } from '~/components/profile-dropdown-menu'
-import { AuthorizationMenu } from '~/components/authorization-menu'
-import { ModeToggle } from '~/components/mode-toggle'
 import { useSession } from 'next-auth/react'
 import Navbar from '~/components/navbar'
+import FormItemWrapper from '~/components/form-item-wrapper'
+import { formSchema } from '~/lib/validations/form'
+import type { z } from 'zod'
 
 function Settings() {
   const { status, data: sessionData } = useSession()
@@ -29,18 +18,6 @@ function Settings() {
     onError: () => {
       console.log('error')
     },
-  })
-
-  const formSchema = z.object({
-    youtubePlaylistId: z.string().min(34, {
-      message: 'Youtube playlist ID must be 34 characters long',
-    }),
-    notionMainDbId: z.string().min(32, {
-      message: 'Notion database ID must be 32 characters long',
-    }),
-    notionSnapshotDbId: z.string().min(32, {
-      message: 'Notion snapshot ID must be 32 characters long',
-    }),
   })
 
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -60,62 +37,59 @@ function Settings() {
   return (
     <div className="container mx-auto pt-6">
       <Navbar sessionData={sessionData} />
-      <div className="text-lg font-bold">Settings</div>
-      <div className="w-1/3">
-        <Form {...form}>
-          {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="youtubePlaylistId"
-              render={({ field }) => (
-                <div className="rounded-md border border-slate-200 p-4">
-                  <FormItem>
-                    <FormLabel>Youtube playlist ID</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Youtube playlist ID" {...field} />
-                    </FormControl>
-                    <FormDescription className="border-t">
-                      Learn more about how to get your Youtube playlist ID{' '}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                </div>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="notionMainDbId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notion database ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Notion database ID" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="notionSnapshotDbId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notion snapshot ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Notion snapshot ID" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {isLoading ? (
-              <Button disabled>Loading...</Button>
-            ) : (
-              <Button type="submit">Submit</Button>
-            )}
-          </form>
-        </Form>
+      <div className="flex">
+        <div className="flex w-[140px] flex-col">
+          <p className="text-center text-lg font-bold">Settings</p>
+          <div className="border-t py-2" />
+          <div className="flex flex-col gap-4">
+            <Button variant={'outline'}>Youtube</Button>
+            <Button variant={'outline'}>Notion</Button>
+            <Button
+              variant={'outline'}
+              className="border-2 border-slate-300 bg-gradient-to-r from-stone-200"
+            >
+              IDs
+            </Button>
+          </div>
+        </div>
+        <div className="w-full">
+          <div className="ml-20 w-8/12 rounded-md border border-slate-300 p-6 shadow-messages">
+            <div className="">
+              <Form {...form}>
+                <form
+                  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+                  onSubmit={form.handleSubmit(onSubmit)}
+                >
+                  <FormField
+                    control={form.control}
+                    name="youtubePlaylistId"
+                    render={({ field }) => <FormItemWrapper field={field} />}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="notionMainDbId"
+                    render={({ field }) => <FormItemWrapper field={field} />}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="notionSnapshotDbId"
+                    render={({ field }) => <FormItemWrapper field={field} />}
+                  />
+                  <div className="flex justify-end gap-4">
+                    {isLoading ? (
+                      <Button disabled>Loading...</Button>
+                    ) : (
+                      <Button type="submit">Save</Button>
+                    )}
+                    <div className="w-10" />
+                  </div>
+                </form>
+              </Form>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
