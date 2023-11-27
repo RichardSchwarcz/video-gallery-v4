@@ -14,7 +14,7 @@ type fieldType =
   | ControllerRenderProps<FormValues, 'notionSnapshotDbId'>
   | ControllerRenderProps<FormValues, 'youtubePlaylistId'>
 
-function FormItemWrapper({ field }: { field: fieldType }) {
+function FormItemWrapper({ field, id }: { field: fieldType; id: string }) {
   let title = ''
   let placeholder = ''
   let tooltip = ''
@@ -40,7 +40,11 @@ function FormItemWrapper({ field }: { field: fieldType }) {
           <p className="w-40 flex-none">{title}</p>
           <FormControl>
             <div className="flex w-full px-4">
-              <Input placeholder={placeholder} {...field} />
+              {id === '' ? (
+                <Input placeholder={placeholder} {...field} />
+              ) : (
+                <Input placeholder={id} {...field} disabled />
+              )}
             </div>
           </FormControl>
         </div>
