@@ -7,18 +7,14 @@ const errorMessages = {
 }
 
 export const formSchema = z.object({
-  youtubePlaylistId: z
-    .string()
-    .min(34, {
-      message: errorMessages.youtube,
-    })
-    .max(34, {
-      message: errorMessages.youtube,
-    }),
-  notionMainDbId: z.string().min(32, {
+  youtubePlaylistId: z.string().length(34, {
+    message: errorMessages.youtube,
+  }),
+  notionMainDbId: z.string().length(32, {
     message: errorMessages.notionMain,
   }),
-  notionSnapshotDbId: z.string().min(32, {
+
+  notionSnapshotDbId: z.string().length(32, {
     message: errorMessages.notionSnapshot,
   }),
 })
