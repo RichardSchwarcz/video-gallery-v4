@@ -9,15 +9,17 @@ datasource db {
 }
 
 model User {
-  id                String          @id @default(cuid())
-  createdAt         DateTime        @default(now())
-  name              String?
-  email             String?         @unique
-  emailVerified     Boolean
-  picture           String?
-  notionAccessToken NotionToken?
-  youtubeAccount    YoutubeAccount?
-  settings          Settings?
+  id                 String          @id @default(cuid())
+  createdAt          DateTime        @default(now())
+  name               String?
+  email              String?         @unique
+  emailVerified      Boolean
+  picture            String?
+  youtubePlaylistId  String?         @unique
+  notionMainDbId     String?         @unique
+  notionSnapshotDbId String?         @unique
+  notionAccessToken  NotionToken?
+  youtubeAccount     YoutubeAccount?
 }
 
 model YoutubeAccount {
@@ -44,13 +46,4 @@ model NotionToken {
   request_id             String
   userId                 String? @unique
   user                   User?   @relation(fields: [userId], references: [id])
-}
-
-model Settings {
-  id                 String  @id @default(cuid())
-  youtubePlaylistId  String? @unique
-  notionMainDbId     String? @unique
-  notionSnapshotDbId String? @unique
-  userId             String? @unique
-  user               User?   @relation(fields: [userId], references: [id])
 }
