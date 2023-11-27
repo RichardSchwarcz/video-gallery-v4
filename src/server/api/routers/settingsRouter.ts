@@ -1,18 +1,13 @@
 import { z } from 'zod'
+import { formSchema } from '~/lib/validations/form'
+import { usersSettingsSchema } from '~/lib/validations/user'
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc'
 import { prisma } from '~/server/db'
 
 export const settingsRouter = createTRPCRouter({
   setIds: protectedProcedure
-    .input(
-      z.object({
-        youtubePlaylistId: z.string().min(34),
-        notionMainDbId: z.string().min(32),
-        notionSnapshotDbId: z.string().min(32),
-      }),
-    )
+    .input(formSchema)
     .mutation(async ({ ctx, input }) => {
-      console.log({ input })
       const user = await prisma.user.findFirst({
         where: {
           OR: [
@@ -27,58 +22,66 @@ export const settingsRouter = createTRPCRouter({
           ],
         },
         select: {
-          settings: true,
           id: true,
+          notionMainDbId: true,
+          notionSnapshotDbId: true,
+          youtubePlaylistId: true,
         },
       })
 
-      if (user?.settings) {
-        // zod schema for input
-        const schema = z.object({
-          notionMainDbId: z.string().min(32),
-          notionSnapshotDbId: z.string().min(32),
-          youtubePlaylistId: z.string().min(34),
-        })
-
-        // validate input
-        const validInput = schema.parse(input)
-
+      if (user) {
         const setSettings = await prisma.user.update({
           where: {
             id: user.id,
           },
           data: {
-            settings: {
-              update: {
-                notionMainDbId: validInput.notionMainDbId,
-                notionSnapshotDbId: validInput.notionSnapshotDbId,
-                youtubePlaylistId: validInput.youtubePlaylistId,
-              },
-            },
-          },
-        })
-        return setSettings
-      }
-
-      if (user && !user.settings) {
-        // zod schema for input
-        const schema = z.object({
-          notionMainDbId: z.string().min(32),
-          notionSnapshotDbId: z.string().min(32),
-          youtubePlaylistId: z.string().min(34),
-        })
-
-        // validate input
-        const validInput = schema.parse(input)
-        const setSettings = await prisma.settings.create({
-          data: {
-            notionMainDbId: validInput.notionMainDbId,
-            notionSnapshotDbId: validInput.notionSnapshotDbId,
-            youtubePlaylistId: validInput.youtubePlaylistId,
-            userId: user.id,
+            notionMainDbId: input.notionMainDbId,
+            notionSnapshotDbId: input.notionSnapshotDbId,
+            youtubePlaylistId: input.youtubePlaylistId,
           },
         })
         return setSettings
       }
     }),
+  getIds: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      const userSettings = await prisma.user.findFirst({
+        where: {
+          OR: [
+            {
+              youtubeAccount: {
+                email: ctx.session.user.email,
+              },
+            },
+            {
+              email: ctx.session.user.email,
+            },
+          ],
+        },
+        select: {
+          notionMainDbId: true,
+          notionSnapshotDbId: true,
+          youtubePlaylistId: true,
+        },
+      })
+
+      const result = usersSettingsSchema.safeParse(userSettings)
+
+      if (result.success) {
+        return {
+          youtubePlaylistId: result.data.youtubePlaylistId,
+          notionMainDbId: result.data.notionMainDbId,
+          notionSnapshotDbId: result.data.notionSnapshotDbId,
+        }
+      }
+      if (result.error) {
+        return {
+          message: 'Please fill in your IDs.',
+        }
+      }
+    } catch (error) {
+      // Handle database or other errors
+      console.log(error)
+    }
+  }),
 })
