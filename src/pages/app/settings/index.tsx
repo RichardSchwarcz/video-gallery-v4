@@ -11,6 +11,8 @@ import type { z } from 'zod'
 import { ButtonLoading } from '~/components/ui/button-loading'
 import React from 'react'
 import type { usersSettingsSchema } from '~/lib/validations/user'
+import Link from 'next/link'
+import SettingsTabs from '~/components/settings-tabs'
 
 function Settings() {
   const { data: sessionData } = useSession()
@@ -54,20 +56,7 @@ function Settings() {
     <div className="container mx-auto pt-6">
       <Navbar sessionData={sessionData} />
       <div className="flex">
-        <div className="flex w-[140px] flex-col">
-          <p className="text-center text-lg font-bold">Settings</p>
-          <div className="border-t py-2" />
-          <div className="flex flex-col gap-4">
-            <Button
-              variant={'outline'}
-              className="border-2 border-slate-300 bg-gradient-to-r from-stone-200"
-            >
-              IDs
-            </Button>
-            <Button variant={'outline'}>Youtube</Button>
-            <Button variant={'outline'}>Notion</Button>
-          </div>
-        </div>
+        <SettingsTabs />
         <div className="w-full">
           {isBanner && (
             <div className="mb-4 ml-20 w-8/12 rounded-md border border-rose-400 p-6 shadow-messages">
