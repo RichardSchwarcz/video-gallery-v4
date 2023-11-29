@@ -21,24 +21,19 @@ function Settings() {
     notionSnapshotDbId: '',
   })
   const { mutate, isLoading } = api.settings.setIds.useMutation()
-  const { data: ids } = api.settings.getIds.useQuery(undefined, {
+  const { error, data: ids } = api.settings.getIds.useQuery(undefined, {
     refetchOnWindowFocus: false,
-    onSuccess: (data) => {
-      if (data?.message) setIsBanner(true)
-      if (!data?.message) setIsBanner(false)
-      if (
-        data?.notionMainDbId &&
-        data?.notionSnapshotDbId &&
-        data?.youtubePlaylistId
-      ) {
-        setSettingsIds({
-          youtubePlaylistId: data?.youtubePlaylistId,
-          notionMainDbId: data?.notionMainDbId,
-          notionSnapshotDbId: data?.notionSnapshotDbId,
-        })
-      }
-    },
+    retry: false,
   })
+
+  React.useEffect(() => {
+    if (error) {
+      setIsBanner(true)
+    }
+    if (ids) {
+      setSettingsIds(ids)
+    }
+  }, [error, ids])
 
   type settingsIds = z.infer<typeof usersSettingsSchema>
 
@@ -76,7 +71,7 @@ function Settings() {
         <div className="w-full">
           {isBanner && (
             <div className="mb-4 ml-20 w-8/12 rounded-md border border-rose-400 p-6 shadow-messages">
-              <p className="font-semibold">{ids?.message}</p>
+              <p className="font-semibold">{error?.message}</p>
             </div>
           )}
           <div className="ml-20 w-8/12 rounded-md border border-slate-300 p-6 shadow-messages">
@@ -121,10 +116,8 @@ function Settings() {
                   <div className="flex justify-end gap-4">
                     {isLoading ? (
                       <ButtonLoading loadingText="Please wait" />
-                    ) : form.formState.isValid && !form.formState.isDirty ? (
-                      <Button type="submit">Save</Button>
                     ) : (
-                      <Button disabled>Save</Button>
+                      <Button type="submit">Save</Button>
                     )}
                     <div className="w-10" />
                   </div>
