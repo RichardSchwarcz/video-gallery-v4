@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { TRPCError } from '@trpc/server'
 import { formSchema } from '~/lib/validations/form'
 import { usersSettingsSchema } from '~/lib/validations/user'
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc'
@@ -75,13 +75,21 @@ export const settingsRouter = createTRPCRouter({
         }
       }
       if (result.error) {
-        return {
-          message: 'Please fill in your IDs.',
-        }
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Please set your URLs',
+          cause: 'Zod error',
+        })
       }
     } catch (error) {
-      // Handle database or other errors
-      console.log(error)
+      if (error instanceof TRPCError && error.code === 'NOT_FOUND') {
+        throw error
+      }
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Something went wrong while fetching user settings.',
+        cause: error,
+      })
     }
   }),
 })
