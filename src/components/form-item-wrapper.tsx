@@ -6,6 +6,8 @@ import { Input } from './ui/input'
 import type { formSchema } from '~/lib/validations/form'
 import type { z } from 'zod'
 import { TooltipWrapper } from './tooltip-wrapper'
+import EditIcon from './icons/edit'
+import React from 'react'
 
 type FormValues = z.infer<typeof formSchema>
 
@@ -15,6 +17,7 @@ type fieldType =
   | ControllerRenderProps<FormValues, 'youtubePlaylistId'>
 
 function FormItemWrapper({ field, id }: { field: fieldType; id: string }) {
+  const [isDisabled, setIsDisabled] = React.useState(true)
   let title = ''
   let placeholder = ''
   let tooltip = ''
@@ -33,19 +36,25 @@ function FormItemWrapper({ field, id }: { field: fieldType; id: string }) {
     placeholder = 'Your unique Notion snapshot ID'
     tooltip = 'How to get Notion snapshot ID'
   }
+
+  // create hook to return input, return width, return button
+  const renderInput = () => {
+    if (id !== '' && isDisabled) {
+      return <Input placeholder={id} {...field} disabled />
+    }
+    if (id !== '') {
+      return <Input {...field} value={id} />
+    }
+    return <Input placeholder={placeholder} {...field} />
+  }
+
   return (
     <FormItem>
       <div className="flex flex-row justify-between">
         <div className="flex w-full flex-row items-center">
           <p className="w-40 flex-none">{title}</p>
           <FormControl>
-            <div className="flex w-full px-4">
-              {id === '' ? (
-                <Input placeholder={placeholder} {...field} />
-              ) : (
-                <Input placeholder={id} {...field} disabled />
-              )}
-            </div>
+            <div className="flex w-full px-4">{renderInput()}</div>
           </FormControl>
         </div>
         <div className="flex-none">
@@ -58,6 +67,15 @@ function FormItemWrapper({ field, id }: { field: fieldType; id: string }) {
               <HelpIcon />
             </Button>
           </TooltipWrapper>
+          {id !== '' && (
+            <Button
+              size={'icon'}
+              variant={'ghost'}
+              onClick={() => setIsDisabled(!isDisabled)}
+            >
+              <EditIcon />
+            </Button>
+          )}
         </div>
       </div>
       <div className="flex h-8 items-center">
