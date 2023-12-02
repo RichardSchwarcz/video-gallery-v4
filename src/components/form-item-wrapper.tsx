@@ -37,7 +37,6 @@ function FormItemWrapper({ field, id }: { field: fieldType; id: string }) {
     tooltip = 'How to get Notion snapshot ID'
   }
 
-  // create hook to return input, return width, return button
   const renderInput = () => {
     if (id !== '' && isDisabled) {
       return <Input placeholder={id} {...field} disabled />
