@@ -11,8 +11,8 @@ import type { z } from 'zod'
 import { ButtonLoading } from '~/components/ui/button-loading'
 import React from 'react'
 import type { usersSettingsSchema } from '~/lib/validations/user'
-import Link from 'next/link'
 import SettingsTabs from '~/components/settings-tabs'
+import { cn } from '~/lib/utils'
 
 function Settings() {
   const { data: sessionData } = useSession()
@@ -51,6 +51,13 @@ function Settings() {
       youtubePlaylistId: '',
     },
   })
+
+  const offsetElementWidth = (ids: settingsIds | undefined) => {
+    if (ids) {
+      return 'w-20'
+    }
+    return 'w-10'
+  }
 
   return (
     <div className="container mx-auto pt-6">
@@ -108,7 +115,7 @@ function Settings() {
                     ) : (
                       <Button type="submit">Save</Button>
                     )}
-                    <div className="w-10" />
+                    <div className={cn(offsetElementWidth(ids))} />
                   </div>
                 </form>
               </Form>
