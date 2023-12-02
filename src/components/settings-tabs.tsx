@@ -5,10 +5,9 @@ import { cn } from '~/lib/utils'
 
 function SettingsTabs() {
   const router = useRouter()
-  console.log(router.pathname)
   const active = (path: string) => {
     if (router.pathname === path) {
-      return 'bg-gradient-to-r from-yellow-200 via-lime-200 to-stone-100'
+      return 'bg-gradient-to-r from-yellow-200 via-lime-200 to-stone-100 text-primary-foreground'
     }
   }
   return (
