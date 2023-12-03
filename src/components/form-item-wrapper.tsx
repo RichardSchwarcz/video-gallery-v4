@@ -16,7 +16,7 @@ type fieldType =
   | ControllerRenderProps<FormValues, 'notionSnapshotDbId'>
   | ControllerRenderProps<FormValues, 'youtubePlaylistId'>
 
-function FormItemWrapper({ field, id }: { field: fieldType; id: string }) {
+function FormItemWrapper({ field, id = '' }: { field: fieldType; id: string }) {
   const [isDisabled, setIsDisabled] = React.useState(true)
   let title = ''
   let placeholder = ''
@@ -42,7 +42,7 @@ function FormItemWrapper({ field, id }: { field: fieldType; id: string }) {
       return <Input placeholder={id} {...field} disabled />
     }
     if (id !== '') {
-      return <Input {...field} value={id} />
+      return <Input {...field} />
     }
     return <Input placeholder={placeholder} {...field} />
   }
@@ -70,7 +70,10 @@ function FormItemWrapper({ field, id }: { field: fieldType; id: string }) {
             <Button
               size={'icon'}
               variant={'ghost'}
-              onClick={() => setIsDisabled(!isDisabled)}
+              onClick={(e) => {
+                setIsDisabled(!isDisabled)
+                e.preventDefault()
+              }}
             >
               <EditIcon />
             </Button>
