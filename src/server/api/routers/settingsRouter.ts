@@ -1,6 +1,5 @@
 import { TRPCError } from '@trpc/server'
 import { formSchema } from '~/lib/validations/form'
-import { usersSettingsSchema } from '~/lib/validations/user'
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc'
 import { prisma } from '~/server/db'
 
@@ -65,7 +64,7 @@ export const settingsRouter = createTRPCRouter({
         },
       })
 
-      const result = usersSettingsSchema.safeParse(userSettings)
+      const result = formSchema.safeParse(userSettings)
 
       if (result.success) {
         return {

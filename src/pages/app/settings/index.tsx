@@ -10,7 +10,6 @@ import { formSchema } from '~/lib/validations/form'
 import type { z } from 'zod'
 import { ButtonLoading } from '~/components/ui/button-loading'
 import React from 'react'
-import type { usersSettingsSchema } from '~/lib/validations/user'
 import SettingsTabs from '~/components/settings-tabs'
 import { cn } from '~/lib/utils'
 
@@ -37,19 +36,15 @@ function Settings() {
     }
   }, [error, ids])
 
-  type settingsIds = z.infer<typeof usersSettingsSchema>
+  type settingsIds = z.infer<typeof formSchema>
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  function onSubmit(values: settingsIds) {
     mutate(values)
   }
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<settingsIds>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      notionMainDbId: '',
-      notionSnapshotDbId: '',
-      youtubePlaylistId: '',
-    },
+    defaultValues: ids,
   })
 
   const offsetElementWidth = (ids: settingsIds | undefined) => {
@@ -110,11 +105,12 @@ function Settings() {
                     )}
                   />
                   <div className="flex justify-end gap-4">
-                    {isLoading ? (
+                    {/* {isLoading ? (
                       <ButtonLoading loadingText="Please wait" />
                     ) : (
                       <Button type="submit">Save</Button>
-                    )}
+                      )} */}
+                    <Button type="submit">Save</Button>
                     <div className={cn(offsetElementWidth(ids))} />
                   </div>
                 </form>

@@ -12,9 +12,3 @@ export const usersNotionAccessTokenSchema = z.object({
   request_id: z.string(),
   userId: z.string().optional(),
 })
-
-export const usersSettingsSchema = z.object({
-  youtubePlaylistId: z.string(),
-  notionMainDbId: z.string(),
-  notionSnapshotDbId: z.string(),
-})
