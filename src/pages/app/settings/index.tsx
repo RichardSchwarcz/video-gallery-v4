@@ -12,17 +12,48 @@ import { ButtonLoading } from '~/components/ui/button-loading'
 import React from 'react'
 import SettingsTabs from '~/components/settings-tabs'
 import { cn } from '~/lib/utils'
+import type {
+  GetServerSidePropsContext,
+  InferGetServerSidePropsType,
+} from 'next'
+import { createServerSideHelpers } from '@trpc/react-query/server'
+import { appRouter } from '~/server/api/root'
+import { createTRPCContext } from '~/server/api/trpc'
+import { TRPCError } from '@trpc/server'
 
-function Settings() {
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  const helpers = createServerSideHelpers({
+    router: appRouter,
+    ctx: await createTRPCContext({ req: context.req, res: context.res }),
+  })
+
+  try {
+    const prefetchedIds = await helpers.settings.getIds.fetch(undefined)
+    return {
+      props: {
+        prefetchedIds,
+      },
+    }
+  } catch (error: unknown) {
+    if (error instanceof TRPCError) {
+      return {
+        props: {
+          error: error.message,
+        },
+      }
+    }
+  }
+}
+
+type settingsIdsType = z.infer<typeof formSchema>
+
+function Settings(
+  props: InferGetServerSidePropsType<typeof getServerSideProps>,
+) {
   const { data: sessionData } = useSession()
   const [isBanner, setIsBanner] = React.useState(false)
-  const [settingsIds, setSettingsIds] = React.useState<settingsIds>({
-    youtubePlaylistId: '',
-    notionMainDbId: '',
-    notionSnapshotDbId: '',
-  })
   const { mutate, isLoading } = api.settings.setIds.useMutation()
-  const { error, data: ids } = api.settings.getIds.useQuery(undefined, {
+  const { error } = api.settings.getIds.useQuery(undefined, {
     refetchOnWindowFocus: false,
     retry: false,
   })
@@ -31,23 +62,23 @@ function Settings() {
     if (error) {
       setIsBanner(true)
     }
-    if (ids) {
-      setSettingsIds(ids)
-    }
-  }, [error, ids])
+  }, [error])
 
-  type settingsIds = z.infer<typeof formSchema>
-
-  function onSubmit(values: settingsIds) {
-    mutate(values)
-  }
-
-  const form = useForm<settingsIds>({
+  const form = useForm<settingsIdsType>({
     resolver: zodResolver(formSchema),
-    defaultValues: ids,
+    defaultValues: props.prefetchedIds,
   })
 
-  const offsetElementWidth = (ids: settingsIds | undefined) => {
+  const settingsIds = props.prefetchedIds ?? {
+    youtubePlaylistId: '',
+    notionMainDbId: '',
+    notionSnapshotDbId: '',
+  }
+
+  function onSubmit(values: settingsIdsType) {
+    mutate(values)
+  }
+  const offsetElementWidth = (ids: settingsIdsType | undefined) => {
     if (ids) {
       return 'w-20'
     }
@@ -105,13 +136,14 @@ function Settings() {
                     )}
                   />
                   <div className="flex justify-end gap-4">
-                    {/* {isLoading ? (
+                    {isLoading ? (
                       <ButtonLoading loadingText="Please wait" />
                     ) : (
                       <Button type="submit">Save</Button>
-                      )} */}
-                    <Button type="submit">Save</Button>
-                    <div className={cn(offsetElementWidth(ids))} />
+                    )}
+                    <div
+                      className={cn(offsetElementWidth(props.prefetchedIds))}
+                    />
                   </div>
                 </form>
               </Form>
