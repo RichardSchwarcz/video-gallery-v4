@@ -29,7 +29,6 @@ function SettingsForm({ data, mutate, isLoading }: propsType) {
 
   function onSubmit(values: settingsIdsType) {
     mutate(values)
-    // form.reset(values)
   }
 
   const offsetElementWidth = (ids: settingsIdsType | undefined) => {
@@ -37,6 +36,21 @@ function SettingsForm({ data, mutate, isLoading }: propsType) {
       return 'w-20'
     }
     return 'w-10'
+  }
+
+  const renderButton = (isLoading: boolean) => {
+    const isDisabled = !form.formState.isDirty
+    if (isDisabled) {
+      return (
+        <Button type="submit" disabled>
+          Save
+        </Button>
+      )
+    }
+    if (isLoading) {
+      return <ButtonLoading loadingText="Please wait" />
+    }
+    return <Button type="submit">Save</Button>
   }
 
   return (
@@ -69,11 +83,7 @@ function SettingsForm({ data, mutate, isLoading }: propsType) {
           )}
         />
         <div className="flex justify-end gap-4">
-          {isLoading ? (
-            <ButtonLoading loadingText="Please wait" />
-          ) : (
-            <Button type="submit">Save</Button>
-          )}
+          {renderButton(isLoading)}
           <div className={cn(offsetElementWidth(data))} />
         </div>
       </form>
