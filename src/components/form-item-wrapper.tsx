@@ -16,7 +16,12 @@ type fieldType =
   | ControllerRenderProps<FormValues, 'notionSnapshotDbId'>
   | ControllerRenderProps<FormValues, 'youtubePlaylistId'>
 
-function FormItemWrapper({ field, id = '' }: { field: fieldType; id: string }) {
+type propsType = {
+  field: fieldType
+  id: string | undefined
+}
+
+function FormItemWrapper({ field, id = '' }: propsType) {
   const [isDisabled, setIsDisabled] = React.useState(true)
   let title = ''
   let placeholder = ''
