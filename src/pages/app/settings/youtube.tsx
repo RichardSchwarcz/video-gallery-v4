@@ -46,6 +46,7 @@ function YoutubeAuthPage() {
             <div className="flex justify-center gap-4 pt-8">
               <Button
                 onClick={() => void signIn('google', undefined, authorization)}
+                className="w-40"
               >
                 Continue
               </Button>
