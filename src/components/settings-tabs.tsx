@@ -7,7 +7,7 @@ function SettingsTabs() {
   const router = useRouter()
   const active = (path: string) => {
     if (router.pathname === path) {
-      return 'bg-gradient-to-r from-yellow-200 via-lime-200 to-stone-100 text-primary-foreground'
+      return 'bg-gradient-to-r from-yellow-200 via-lime-200 to-stone-100 text-slate-700'
     }
   }
   return (
