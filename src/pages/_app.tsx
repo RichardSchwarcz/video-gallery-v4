@@ -5,6 +5,7 @@ import { api } from '~/utils/api'
 import '~/styles/globals.css'
 import { ThemeProvider } from '~/components/theme-provider'
 import { Inter } from 'next/font/google'
+import { Toaster } from '~/components/ui/toaster'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -29,6 +30,7 @@ const MyApp: AppType<{ session: Session | null }> = ({
           }
         `}</style>
         <Component {...pageProps} />
+        <Toaster />
       </ThemeProvider>
     </SessionProvider>
   )
