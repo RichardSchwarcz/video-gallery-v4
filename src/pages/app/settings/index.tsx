@@ -6,8 +6,10 @@ import SettingsTabs from '~/components/settings-tabs'
 import SettingsForm from '~/components/settings-form'
 import FormFieldSkeleton from '~/components/form-field-skeleton'
 import { Skeleton } from '~/components/ui/skeleton'
+import { useToast } from '~/components/ui/use-toast'
 
 function Settings() {
+  const { toast } = useToast()
   const { data: sessionData } = useSession()
   const [isBanner, setIsBanner] = React.useState(false)
   const { mutate, isLoading, isSuccess } = api.settings.setIds.useMutation()
@@ -26,8 +28,12 @@ function Settings() {
     }
     if (isSuccess) {
       setIsBanner(false)
+      toast({
+        title: 'Successfully updated!',
+        description: 'Your settings have been updated.',
+      })
     }
-  }, [error, isSuccess])
+  }, [error, isSuccess, toast])
 
   return (
     <div className="container mx-auto pt-6">
