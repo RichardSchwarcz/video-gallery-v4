@@ -86,7 +86,7 @@ export const settingsRouter = createTRPCRouter({
       }
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        message: 'Something went wrong while fetching user settings.',
+        message: 'Something went wrong on our end',
         cause: error,
       })
     }
