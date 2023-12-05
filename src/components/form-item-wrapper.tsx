@@ -27,7 +27,7 @@ function FormItemWrapper({ field, id = '' }: propsType) {
   let placeholder = ''
   let tooltip = ''
   if (field.name === 'youtubePlaylistId') {
-    title = 'Youtube playlist ID'
+    title = 'YouTube playlist ID'
     placeholder = 'Your unique Youtube playlist ID'
     tooltip = 'How to get Youtube playlist ID'
   }
