@@ -6,14 +6,14 @@ function YoutubeAuthSettings() {
     <>
       <div className="flex items-center gap-2">
         <Youtube width="3rem" height="3rem" />
-        <div className="text-center text-2xl font-bold">
+        <h1 className="text-center text-2xl font-bold">
           YouTube Authorization
-        </div>
+        </h1>
       </div>
       <div>
-        <div className="pt-7">
+        <p className="pt-7">
           You already gave us consent to access your YouTube playlist items.
-        </div>
+        </p>
         <div className="pt-2">
           <p>
             If you want to remove your consent, go to your{' '}
