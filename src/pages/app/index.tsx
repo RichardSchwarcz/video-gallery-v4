@@ -7,11 +7,20 @@ import { type EventSourceDataType, syncMessage } from '../api/sync'
 import { initialState, reducer } from '~/utils/reducer'
 import Navbar from '~/components/navbar'
 import SyncIcon from '~/components/icons/sync'
+import { api } from '~/utils/api'
+import WelcomeMessage from '~/components/welcome-message'
+import SettingsIcon from '~/components/icons/settings'
+import { Skeleton } from '~/components/ui/skeleton'
 
 function App() {
   const { status, data: sessionData } = useSession()
   const [isSyncing, setIsSyncing] = useState(false)
   const [state, dispatch] = useReducer(reducer, initialState)
+  const { isSuccess: hasSettings, isLoading } =
+    api.settings.hasSettings.useQuery(undefined, {
+      retry: false,
+      refetchOnWindowFocus: false,
+    })
 
   const handleSync = () => {
     setIsSyncing(true)
@@ -96,6 +105,45 @@ function App() {
     }
   }
 
+  const renderSyncButton = () => {
+    if (isSyncing) {
+      return <ButtonLoading loadingText="Syncing" />
+    }
+    if (!hasSettings) {
+      return (
+        <Button asChild className="cursor-pointer">
+          <div className="flex gap-2">
+            <SettingsIcon />
+            <Link href={'/app/settings'} className="font-semibold">
+              Settings
+            </Link>
+          </div>
+        </Button>
+      )
+    }
+    return (
+      <Button onClick={() => handleSync()} className="w-64">
+        <SyncIcon />
+        <span className="pl-2 font-semibold">Sync</span>
+      </Button>
+    )
+  }
+
+  const renderMessage = () => {
+    if (hasSettings) {
+      return (
+        <div className="mt-4 rounded-md border border-slate-300 p-2 shadow-messages">
+          <p className="px-20">Last sync: 6.12.2023 8:35:22</p>
+        </div>
+      )
+    }
+    return (
+      <div className="mt-4 w-2/3 rounded-md border border-slate-300 p-4 shadow-messages">
+        <WelcomeMessage />
+      </div>
+    )
+  }
+
   if (status === 'unauthenticated') {
     return (
       <div className="flex flex-auto py-10">
@@ -114,18 +162,9 @@ function App() {
       <Navbar sessionData={sessionData} />
 
       <div className="mx-auto flex w-fit flex-col items-center">
-        <div>
-          {isSyncing ? (
-            <ButtonLoading loadingText="Syncing" />
-          ) : (
-            <Button onClick={() => handleSync()} className="w-64">
-              <SyncIcon />
-              <span className="pl-2 font-semibold">Sync</span>
-            </Button>
-          )}
-        </div>
-        <div className="mt-4 rounded-md border border-slate-300 p-2 shadow-messages">
-          <p>Go to settings and give consent and fill IDs</p>
+        <div>{renderSyncButton()}</div>
+        <div className="flex justify-center">
+          {isLoading ? <Skeleton className="mt-4 h-8 w-96" /> : renderMessage()}
         </div>
       </div>
     </div>
