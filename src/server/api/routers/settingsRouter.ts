@@ -1,11 +1,12 @@
 import { TRPCError } from '@trpc/server'
-import { formSchema } from '~/lib/validations/form'
+import { idSchema } from '~/lib/validations/form'
+import { usersNotionAccessTokenSchema } from '~/lib/validations/user'
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc'
 import { prisma } from '~/server/db'
 
 export const settingsRouter = createTRPCRouter({
   setIds: protectedProcedure
-    .input(formSchema)
+    .input(idSchema)
     .mutation(async ({ ctx, input }) => {
       const user = await prisma.user.findFirst({
         where: {
@@ -64,7 +65,7 @@ export const settingsRouter = createTRPCRouter({
         },
       })
 
-      const result = formSchema.safeParse(userSettings)
+      const result = idSchema.safeParse(userSettings)
 
       if (result.success) {
         return {
@@ -84,6 +85,57 @@ export const settingsRouter = createTRPCRouter({
       if (error instanceof TRPCError && error.code === 'NOT_FOUND') {
         throw error
       }
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Something went wrong on our end',
+        cause: error,
+      })
+    }
+  }),
+  hasSettings: protectedProcedure.query(async ({ ctx }) => {
+    // prisma get user
+    try {
+      const user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            {
+              youtubeAccount: {
+                email: ctx.session.user.email,
+              },
+            },
+            {
+              email: ctx.session.user.email,
+            },
+          ],
+        },
+        select: {
+          notionMainDbId: true,
+          notionSnapshotDbId: true,
+          youtubePlaylistId: true,
+          notionAccessToken: true,
+        },
+      })
+      console.log({ user })
+      const settingsSchema = idSchema.extend({
+        notionAccessToken: usersNotionAccessTokenSchema,
+      })
+
+      const result = settingsSchema.safeParse(user)
+      if (result.success) {
+        return true
+      }
+      if (result.error) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Please set your URLs and give consent',
+          cause: 'Zod error',
+        })
+      }
+    } catch (error) {
+      if (error instanceof TRPCError && error.code === 'NOT_FOUND') {
+        throw error
+      }
+
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Something went wrong on our end',
