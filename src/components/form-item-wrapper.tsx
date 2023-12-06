@@ -3,13 +3,13 @@ import HelpIcon from './icons/help'
 import { Button } from './ui/button'
 import { FormControl, FormItem, FormMessage } from './ui/form'
 import { Input } from './ui/input'
-import type { formSchema } from '~/lib/validations/form'
+import type { idSchema } from '~/lib/validations/form'
 import type { z } from 'zod'
 import { TooltipWrapper } from './tooltip-wrapper'
 import EditIcon from './icons/edit'
 import React from 'react'
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<typeof idSchema>
 
 type fieldType =
   | ControllerRenderProps<FormValues, 'notionMainDbId'>

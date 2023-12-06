@@ -6,7 +6,7 @@ const errorMessages = {
   notionSnapshot: 'Notion snapshot ID must be 32 characters long',
 }
 
-export const formSchema = z.object({
+export const idSchema = z.object({
   youtubePlaylistId: z.string().length(34, {
     message: errorMessages.youtube,
   }),

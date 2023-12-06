@@ -3,13 +3,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Form, FormField } from '~/components/ui/form'
 import { Button } from '~/components/ui/button'
 import FormItemWrapper from '~/components/form-item-wrapper'
-import { formSchema } from '~/lib/validations/form'
+import { idSchema } from '~/lib/validations/form'
 import type { z } from 'zod'
 import { ButtonLoading } from '~/components/ui/button-loading'
 import React from 'react'
 import { cn } from '~/lib/utils'
 
-type settingsIdsType = z.infer<typeof formSchema>
+type settingsIdsType = z.infer<typeof idSchema>
 
 type propsType = {
   data: settingsIdsType | undefined
@@ -19,7 +19,7 @@ type propsType = {
 
 function SettingsForm({ data, mutate, isLoading }: propsType) {
   const form = useForm<settingsIdsType>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(idSchema),
     defaultValues: {
       youtubePlaylistId: data?.youtubePlaylistId ?? '',
       notionMainDbId: data?.notionMainDbId ?? '',
