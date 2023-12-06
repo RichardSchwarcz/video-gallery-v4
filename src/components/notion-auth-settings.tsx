@@ -11,7 +11,7 @@ function NotionAuthSettings() {
       <p className="pt-7">
         You already gave us consent to access your Notion database.
       </p>
-      <div className="pt-2">
+      <div className="pt-4">
         <p className="leading-7">
           If you want to remove your consent:
           <li>

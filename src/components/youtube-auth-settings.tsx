@@ -14,7 +14,7 @@ function YoutubeAuthSettings() {
         <p className="pt-7">
           You already gave us consent to access your YouTube playlist items.
         </p>
-        <div className="pt-2">
+        <div className="pt-4">
           <p>
             If you want to remove your consent, go to your{' '}
             <Link
