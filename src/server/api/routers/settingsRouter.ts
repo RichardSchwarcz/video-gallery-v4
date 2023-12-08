@@ -1,4 +1,5 @@
 import { TRPCError } from '@trpc/server'
+import { z } from 'zod'
 import { idSchema } from '~/lib/validations/form'
 import { usersNotionAccessTokenSchema } from '~/lib/validations/user'
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc'
@@ -135,6 +136,82 @@ export const settingsRouter = createTRPCRouter({
         throw error
       }
 
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Something went wrong on our end',
+        cause: error,
+      })
+    }
+  }),
+  setLastSync: protectedProcedure.mutation(async ({ ctx }) => {
+    try {
+      const user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            {
+              youtubeAccount: {
+                email: ctx.session.user.email,
+              },
+            },
+            {
+              email: ctx.session.user.email,
+            },
+          ],
+        },
+      })
+
+      if (user) {
+        const lastSync = await prisma.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            lastSync: new Date(),
+          },
+        })
+
+        if (lastSync) {
+          return lastSync.createdAt
+        }
+      }
+    } catch (error) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Something went wrong on our end',
+        cause: error,
+      })
+    }
+  }),
+  getLastSync: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      const user = await prisma.user.findFirst({
+        where: {
+          OR: [
+            {
+              youtubeAccount: {
+                email: ctx.session.user.email,
+              },
+            },
+            {
+              email: ctx.session.user.email,
+            },
+          ],
+        },
+        select: {
+          lastSync: true,
+        },
+      })
+
+      const lastSyncValidation = z.object({
+        lastSync: z.date(),
+      })
+
+      const result = lastSyncValidation.safeParse(user)
+
+      if (result.success) {
+        return result.data.lastSync
+      }
+    } catch (error) {
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: 'Something went wrong on our end',
