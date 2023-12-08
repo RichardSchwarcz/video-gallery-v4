@@ -4,18 +4,19 @@ import {
   type CreatePageResponse,
 } from '@notionhq/client/build/src/api-endpoints'
 import { type VideoSchema } from '../types/videoTypes'
-import { env } from '~/env.mjs'
 
 // ------------- FUNCTIONS ----------------
 
-export async function getNotionData(access_token: string) {
+export async function getNotionData(
+  access_token: string,
+  mainDbId: string,
+  snapshotDbId: string,
+) {
   const notion = new Client({ auth: access_token })
-  const databaseId = env.NOTION_DATABASE_ID
-  const mainData = await notion.databases.query({ database_id: databaseId })
+  const mainData = await notion.databases.query({ database_id: mainDbId })
 
-  const snapshot_id = env.NOTION_SNAPSHOT_ID
   const snapshotData = await notion.databases.query({
-    database_id: snapshot_id,
+    database_id: snapshotDbId,
   })
 
   return {
@@ -29,13 +30,14 @@ export async function getNotionData(access_token: string) {
 export async function postToNotionDatabase(
   video: VideoSchema,
   access_token: string,
+  mainDbId: string,
 ): Promise<CreatePageResponse> {
   const notion = new Client({ auth: access_token })
 
   const parameters: CreatePageParameters = {
     parent: {
       type: 'database_id',
-      database_id: env.NOTION_DATABASE_ID,
+      database_id: mainDbId,
     },
     cover: {
       external: { url: `${video.thumbnail}` },
@@ -74,12 +76,13 @@ export async function postToNotionSnapshot(
     playlistItemId: string
   },
   access_token: string,
+  snapshotDbId: string,
 ): Promise<CreatePageResponse> {
   const notion = new Client({ auth: access_token })
   const parameters: CreatePageParameters = {
     parent: {
       type: 'database_id',
-      database_id: env.NOTION_SNAPSHOT_ID,
+      database_id: snapshotDbId,
     },
     properties: {
       Name: {
@@ -100,7 +103,11 @@ export async function postToNotionSnapshot(
 
 // -------------------------------------------------------------------
 
-export async function archiveNotionPage(pageId: string, access_token: string) {
+export async function archiveNotionPage(
+  pageId: string,
+  access_token: string,
+  _notionDatabaseId: string,
+) {
   const notion = new Client({ auth: access_token })
 
   return notion.pages.update({
