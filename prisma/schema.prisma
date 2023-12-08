@@ -15,6 +15,7 @@ model User {
   email              String?         @unique
   emailVerified      Boolean
   picture            String?
+  lastSync           DateTime?
   youtubePlaylistId  String?         @unique
   notionMainDbId     String?         @unique
   notionSnapshotDbId String?         @unique
