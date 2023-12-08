@@ -10,7 +10,6 @@ import {
   postDelayedRequests,
   type SnapshotData,
 } from '~/server/api/utils/syncHelpers'
-import { PLAYLIST_ID } from '~/server/constants'
 import type {
   ArchivedVideoInfo,
   PlaylistItem,
@@ -41,6 +40,7 @@ import { isYoutubeAuthorized } from '~/utils/auth'
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints'
 import { prisma } from '~/server/db'
 import { usersNotionAccessTokenSchema } from '~/lib/validations/user'
+import { idSchema } from '~/lib/validations/form'
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession({ req })
@@ -76,14 +76,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     },
     select: {
       notionAccessToken: true,
+      notionMainDbId: true,
+      notionSnapshotDbId: true,
+      youtubePlaylistId: true,
     },
   })
 
-  const usersNotionData = usersNotionAccessTokenSchema.parse(
-    user?.notionAccessToken,
-  )
+  const settingsSchema = idSchema.extend({
+    notionAccessToken: usersNotionAccessTokenSchema,
+  })
 
-  const notionAccessToken = usersNotionData.access_token
+  const userData = settingsSchema.safeParse(user)
+
+  if (!userData.success) {
+    throw new Error('Please set your settings')
+  }
+
+  const notionAccessToken = userData.data.notionAccessToken.access_token
 
   stream.on('comparingDifference', function (event) {
     res.write(
@@ -94,7 +103,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   })
   stream.emit('comparingDifference', 'syncEvent')
 
-  const { mainData, snapshotData } = await getNotionData(notionAccessToken)
+  const { mainData, snapshotData } = await getNotionData(
+    notionAccessToken,
+    userData.data.notionMainDbId,
+    userData.data.notionSnapshotDbId,
+  )
+
   const {
     notionMainDataIDs,
     notionMainVideosIDs,
@@ -112,7 +126,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const videosOptions: VideosOptions = {
     part: 'snippet',
     maxResults: '50',
-    playlistId: PLAYLIST_ID,
+    playlistId: userData.data.youtubePlaylistId,
   }
   const rawPlaylistItems: RawPlaylistItem[] = await getYoutubeVideosRecursively(
     accessToken,
@@ -174,6 +188,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       archiveNotionPage,
       350,
       notionAccessToken,
+      '',
     )) as PageObjectResponse[]
 
     const getArchivedVideoInfo = async (
@@ -236,6 +251,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       postToNotionDatabase,
       350,
       notionAccessToken,
+      userData.data.notionMainDbId,
     )
 
     //* post to notion snapshot DB (new video objects)
@@ -245,6 +261,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       postToNotionSnapshot,
       350,
       notionAccessToken,
+      userData.data.notionSnapshotDbId,
     )
 
     stream.on('hasNewYoutubeVideos', function (event) {
@@ -288,6 +305,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       postToNotionSnapshot,
       350,
       notionAccessToken,
+      userData.data.notionSnapshotDbId,
     )
 
     stream.on('isDeletedFromSnapshot', function (event) {
