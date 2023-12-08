@@ -93,7 +93,6 @@ export const settingsRouter = createTRPCRouter({
     }
   }),
   hasSettings: protectedProcedure.query(async ({ ctx }) => {
-    // prisma get user
     try {
       const user = await prisma.user.findFirst({
         where: {
@@ -115,7 +114,7 @@ export const settingsRouter = createTRPCRouter({
           notionAccessToken: true,
         },
       })
-      console.log({ user })
+
       const settingsSchema = idSchema.extend({
         notionAccessToken: usersNotionAccessTokenSchema,
       })
