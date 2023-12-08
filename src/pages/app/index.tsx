@@ -15,12 +15,29 @@ import { Skeleton } from '~/components/ui/skeleton'
 function App() {
   const { status, data: sessionData } = useSession()
   const [isSyncing, setIsSyncing] = useState(false)
+  const { mutate } = api.settings.setLastSync.useMutation()
+  const { data: lastSync } = api.settings.getLastSync.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  })
   const [state, dispatch] = useReducer(reducer, initialState)
   const { isSuccess: hasSettings, isLoading } =
     api.settings.hasSettings.useQuery(undefined, {
       retry: false,
       refetchOnWindowFocus: false,
     })
+
+  function formatDateTime(date: Date): string {
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0') // Months are zero-based
+    const year = date.getFullYear().toString()
+
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    const seconds = date.getSeconds().toString().padStart(2, '0')
+
+    return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`
+  }
 
   const handleSync = () => {
     setIsSyncing(true)
@@ -56,6 +73,7 @@ function App() {
             done: { message: data.message },
           })
           setIsSyncing(false)
+          mutate()
         }
         if (data.message == syncMessage.snapshot) {
           dispatch({
@@ -130,10 +148,10 @@ function App() {
   }
 
   const renderMessage = () => {
-    if (hasSettings) {
+    if (hasSettings && lastSync) {
       return (
         <div className="mt-4 rounded-md border border-slate-300 p-2 shadow-messages">
-          <p className="px-20">Last sync: 6.12.2023 8:35:22</p>
+          <p className="px-16">Last Sync: {formatDateTime(lastSync)}</p>
         </div>
       )
     }
