@@ -108,14 +108,23 @@ export type SnapshotData = ReturnType<typeof formatSnapshotData>
 
 export async function postDelayedRequests<T, U>(
   dataArray: T[],
-  requestFunction: (element: T, accessToken: string) => Promise<U>,
+  requestFunction: (
+    element: T,
+    accessToken: string,
+    notionDatabaseId: string,
+  ) => Promise<U>,
   delayBetweenRequestsMs: number,
   accessToken: string,
+  notionDatabaseId: string,
 ): Promise<U[]> {
   const result: U[] = []
 
   for (const element of dataArray) {
-    const response = await requestFunction(element, accessToken)
+    const response = await requestFunction(
+      element,
+      accessToken,
+      notionDatabaseId,
+    )
     result.push(response)
 
     if (delayBetweenRequestsMs > 0) {
