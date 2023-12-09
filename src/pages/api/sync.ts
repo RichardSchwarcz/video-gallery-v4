@@ -42,6 +42,12 @@ import { prisma } from '~/server/db'
 import { usersNotionAccessTokenSchema } from '~/lib/validations/user'
 import { idSchema } from '~/lib/validations/form'
 
+export type ResponseData = {
+  newDataToSnapshotDB: SnapshotData
+  newDataToMainDB: VideoSchema[]
+  archivedVideoInfo: ArchivedVideoInfo[]
+}
+
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession({ req })
   if (!session) {
@@ -153,6 +159,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   // -----------------------------------------------------------------------------------------
 
+  const data: ResponseData = {
+    newDataToSnapshotDB: [],
+    newDataToMainDB: [],
+    archivedVideoInfo: [],
+  }
+
   if (isDeletedFromMain) {
     //* get video ID as playlist item from snapshot data
     // each video in youtube playlist has its own unique ID for that playlist
@@ -215,11 +227,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
           message: syncMessage.deleted,
-          data: archivedVideoInfo,
         })}\n\n`,
       )
     })
     stream.emit('isDeletedFromMain', 'syncEvent')
+
+    data.archivedVideoInfo = archivedVideoInfo
   }
 
   if (hasNewYoutubeVideos) {
@@ -268,11 +281,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
           message: syncMessage.added,
-          data: newDataToMainDB,
         })}\n\n`,
       )
     })
     stream.emit('hasNewYoutubeVideos', 'syncEvent')
+
+    data.newDataToMainDB = newDataToMainDB
   }
 
   const accidentallyDeletedFromSnapshot = rawPlaylistItems.filter(
@@ -312,11 +326,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
           message: syncMessage.snapshot,
-          data: newDataToSnapshotDB,
         })}\n\n`,
       )
     })
     stream.emit('isDeletedFromSnapshot', 'syncEvent')
+
+    data.newDataToSnapshotDB = newDataToSnapshotDB
   }
 
   if (!isDeletedFromMain && !hasNewYoutubeVideos && !isDeletedFromSnapshot) {
@@ -334,41 +349,37 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     res.write(
       `event: ${event}\ndata: ${JSON.stringify({
         message: syncMessage.done,
+        data: data,
       })}\n\n`,
     )
   })
   stream.emit('done', 'syncEvent')
-
-  // res.end("done\n");
 }
 
 export default handler
 
 export const syncMessage = {
-  comparing: 'Comparing differences between notion and youtube',
-  deleting: 'Deleting videos from youtube playlist',
-  adding: 'Adding videos to notion database',
+  comparing: 'Comparing differences',
+  deleting: 'Deleting videos from YouTube playlist',
+  adding: 'Adding videos to Notion database',
   synced: 'Everything is already in sync',
   done: 'Everything is in sync 🎉',
-  snapshotAdding: 'Adding videos back to notion snapshot database',
+  snapshotAdding: 'Adding videos back to Notion snapshot database',
 
   deleted: 'Deleted these videos from youtube playlist',
   added: 'Added these videos to notion database',
   snapshot: 'Added these videos back to notion snapshot database',
 } as const
 
-export type EventSourceDataType =
+export type EventSourceMessages =
   | {
       message: typeof syncMessage.deleted
-      data: ArchivedVideoInfo[]
     }
   | {
       message: typeof syncMessage.added
-      data: VideoSchema[]
     }
   | {
       message: typeof syncMessage.snapshot
-      data: SnapshotData
     }
   | {
       message: typeof syncMessage.comparing
@@ -385,11 +396,6 @@ export type EventSourceDataType =
   | {
       message: typeof syncMessage.synced
     }
-  | {
-      message: typeof syncMessage.done
-    }
-
-// export type SyncMessageType = keyof typeof syncMessage;
 
 // const streamFunc = (
 //   event: any,
