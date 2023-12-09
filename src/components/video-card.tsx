@@ -5,13 +5,14 @@ import type { VideoSchema } from '~/server/api/types/videoTypes'
 
 function VideoCard({ data }: { data: VideoSchema }) {
   return (
-    <div className="my-2 flex flex-col rounded-md border border-slate-500">
+    <div className="my-2 flex h-[152px] w-[141px] flex-col rounded-md border border-slate-500">
       <Image
         src={data.thumbnail}
         alt="img"
-        width="480"
-        height="360"
+        width="141"
+        height="80"
         className="rounded-t-md"
+        quality={100}
       />
       <TooltipWrapper text={data.title}>
         <a href={data.url} target="_blank">
