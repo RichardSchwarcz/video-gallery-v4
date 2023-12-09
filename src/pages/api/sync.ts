@@ -103,7 +103,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   stream.on('comparingDifference', function (event) {
     res.write(
       `event: ${event}\ndata: ${JSON.stringify({
-        message: syncMessage.comparing,
+        message: syncMessages.comparing,
       })}\n\n`,
     )
   })
@@ -177,7 +177,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     stream.on('deletingFromYoutube', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.deleting,
+          message: syncMessages.deleting,
         })}\n\n`,
       )
     })
@@ -226,7 +226,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     stream.on('isDeletedFromMain', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.deleted,
+          message: syncMessages.deleted,
         })}\n\n`,
       )
     })
@@ -252,7 +252,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     stream.on('addingToNotion', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.adding,
+          message: syncMessages.adding,
         })}\n\n`,
       )
     })
@@ -280,7 +280,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     stream.on('hasNewYoutubeVideos', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.added,
+          message: syncMessages.added,
         })}\n\n`,
       )
     })
@@ -304,7 +304,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     stream.on('snapshotAdding', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.snapshotAdding,
+          message: syncMessages.snapshotAdding,
         })}\n\n`,
       )
     })
@@ -325,7 +325,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     stream.on('isDeletedFromSnapshot', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.snapshot,
+          message: syncMessages.snapshot,
         })}\n\n`,
       )
     })
@@ -338,7 +338,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     stream.on('isSynced', function (event) {
       res.write(
         `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.synced,
+          message: syncMessages.synced,
         })}\n\n`,
       )
     })
@@ -348,7 +348,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   stream.on('done', function (event) {
     res.write(
       `event: ${event}\ndata: ${JSON.stringify({
-        message: syncMessage.done,
+        message: syncMessages.done,
         data: data,
       })}\n\n`,
     )
@@ -358,7 +358,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
 export default handler
 
-export const syncMessage = {
+export const syncMessages = {
   comparing: 'Comparing differences',
   deleting: 'Deleting videos from YouTube playlist',
   adding: 'Adding videos to Notion database',
@@ -371,30 +371,32 @@ export const syncMessage = {
   snapshot: 'Added these videos back to notion snapshot database',
 } as const
 
+export type TSyncMessages = (typeof syncMessages)[keyof typeof syncMessages]
+
 export type EventSourceMessages =
   | {
-      message: typeof syncMessage.deleted
+      message: typeof syncMessages.deleted
     }
   | {
-      message: typeof syncMessage.added
+      message: typeof syncMessages.added
     }
   | {
-      message: typeof syncMessage.snapshot
+      message: typeof syncMessages.snapshot
     }
   | {
-      message: typeof syncMessage.comparing
+      message: typeof syncMessages.comparing
     }
   | {
-      message: typeof syncMessage.adding
+      message: typeof syncMessages.adding
     }
   | {
-      message: typeof syncMessage.deleting
+      message: typeof syncMessages.deleting
     }
   | {
-      message: typeof syncMessage.snapshotAdding
+      message: typeof syncMessages.snapshotAdding
     }
   | {
-      message: typeof syncMessage.synced
+      message: typeof syncMessages.synced
     }
 
 // const streamFunc = (
