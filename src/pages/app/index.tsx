@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import { useState } from 'react'
 import { Button } from '~/components/ui/button'
@@ -5,8 +6,9 @@ import Link from 'next/link'
 import { ButtonLoading } from '~/components/ui/button-loading'
 import {
   type EventSourceMessages,
-  syncMessage,
+  syncMessages,
   type ResponseData,
+  type TSyncMessages,
 } from '../api/sync'
 import Navbar from '~/components/navbar'
 import SyncIcon from '~/components/icons/sync'
@@ -15,9 +17,11 @@ import WelcomeMessage from '~/components/welcome-message'
 import SettingsIcon from '~/components/icons/settings'
 import { Skeleton } from '~/components/ui/skeleton'
 import { formatDateObject } from '~/utils/formatDateObject'
+import SyncDetailsTabs from '~/components/sync-details-tabs'
+import VideoCard from '~/components/video-card'
 
 function App() {
-  const [message, setMessage] = useState<string>('')
+  const [message, setMessage] = useState<TSyncMessages>()
   const [syncData, setSyncData] = useState<ResponseData>({
     newDataToSnapshotDB: [],
     newDataToMainDB: [],
@@ -44,12 +48,12 @@ function App() {
         const data = JSON.parse(e.data as string) as
           | EventSourceMessages
           | {
-              message: typeof syncMessage.done
+              message: typeof syncMessages.done
               data: ResponseData
             }
         setMessage(data.message)
 
-        if (data.message == syncMessage.done) {
+        if (data.message == syncMessages.done) {
           setSyncData(data.data)
           setIsSyncing(false)
           lastSyncMutation()
@@ -70,7 +74,7 @@ function App() {
     if (isSyncing) {
       return <ButtonLoading loadingText="Syncing" />
     }
-    if (!hasSettings) {
+    if (!hasSettings && !isLoading) {
       return (
         <Button asChild className="cursor-pointer">
           <div className="flex gap-2">
@@ -82,6 +86,9 @@ function App() {
         </Button>
       )
     }
+    if (message && message == syncMessages.done) {
+      return
+    }
     return (
       <Button onClick={() => handleSync()} className="w-64">
         <SyncIcon />
@@ -91,23 +98,26 @@ function App() {
   }
 
   const renderMessage = () => {
-    if (message !== '') {
-      if (message == 'Everything is in sync 🎉') {
-        setTimeout(() => {
-          setMessage('')
-        }, 5000)
-      }
+    if (message) {
       return (
         <div className="mt-4 rounded-md border border-slate-300 p-2 shadow-messages">
           <p className="px-16">{message}</p>
         </div>
       )
     }
-
     if (hasSettings && lastSync) {
       return (
         <div className="mt-4 rounded-md border border-slate-300 p-2 shadow-messages">
           <p className="px-16">Last Sync: {formatDateObject(lastSync)}</p>
+        </div>
+      )
+    }
+    if (hasSettings && !lastSync) {
+      return (
+        <div className="mt-4 rounded-md border border-slate-300 p-2 shadow-messages">
+          <p className="line-clamp-2 px-4">
+            Try adding some videos to your YouTube playlist and sync!
+          </p>
         </div>
       )
     }
@@ -134,11 +144,22 @@ function App() {
   return (
     <div className="container mx-auto pt-6">
       <Navbar sessionData={sessionData} />
-
-      <div className="mx-auto flex w-fit flex-col items-center">
-        <div>{renderSyncButton()}</div>
-        <div className="flex justify-center">
-          {isLoading ? <Skeleton className="mt-4 h-8 w-96" /> : renderMessage()}
+      <div className="flex">
+        <SyncDetailsTabs />
+        <div className="mx-auto flex w-2/3 flex-col items-center">
+          <div>{renderSyncButton()}</div>
+          <div className="flex justify-center">
+            {isLoading ? (
+              <Skeleton className="mt-4 h-8 w-96" />
+            ) : (
+              renderMessage()
+            )}
+          </div>
+          <div className="mt-4 w-full rounded-md border border-slate-300 p-2 shadow-messages">
+            {syncData.newDataToMainDB.map((video) => (
+              <VideoCard key={video.url} data={video} />
+            ))}
+          </div>
         </div>
       </div>
     </div>
