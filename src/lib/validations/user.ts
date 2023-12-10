@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const usersNotionAccessTokenSchema = z.object({
+export const NotionToken = z.object({
   access_token: z.string(),
   token_type: z.string(),
   bot_id: z.string(),

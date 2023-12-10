@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { idSchema } from '~/lib/validations/form'
-import { usersNotionAccessTokenSchema } from '~/lib/validations/user'
+import { NotionToken } from '~/lib/validations/user'
 import { createTRPCRouter, protectedProcedure } from '~/server/api/trpc'
 import { prisma } from '~/server/db'
 
@@ -117,7 +117,7 @@ export const settingsRouter = createTRPCRouter({
       })
 
       const settingsSchema = idSchema.extend({
-        notionAccessToken: usersNotionAccessTokenSchema,
+        notionAccessToken: NotionToken,
       })
 
       const result = settingsSchema.safeParse(user)

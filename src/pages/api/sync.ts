@@ -39,7 +39,7 @@ import EventEmitter from 'events'
 import { isYoutubeAuthorized } from '~/utils/auth'
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints'
 import { prisma } from '~/server/db'
-import { usersNotionAccessTokenSchema } from '~/lib/validations/user'
+import { NotionToken } from '~/lib/validations/user'
 import { idSchema } from '~/lib/validations/form'
 
 export type ResponseData = {
@@ -89,7 +89,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   })
 
   const settingsSchema = idSchema.extend({
-    notionAccessToken: usersNotionAccessTokenSchema,
+    notionAccessToken: NotionToken,
   })
 
   const userData = settingsSchema.safeParse(user)

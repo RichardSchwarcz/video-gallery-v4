@@ -1,7 +1,7 @@
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 import { env } from '~/env.mjs'
 import { prisma } from '~/server/db'
-import { usersNotionAccessTokenSchema } from '~/lib/validations/user'
+import { NotionToken } from '~/lib/validations/user'
 import { TRPCError } from '@trpc/server'
 
 export const notionRouter = createTRPCRouter({
@@ -38,9 +38,7 @@ export const notionRouter = createTRPCRouter({
         },
       })
 
-      const result = usersNotionAccessTokenSchema.safeParse(
-        user?.notionAccessToken,
-      )
+      const result = NotionToken.safeParse(user?.notionAccessToken)
 
       if (result.success) {
         return result.data.access_token
