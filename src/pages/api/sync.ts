@@ -26,7 +26,7 @@ import {
 import {
   formatPlaylistItems,
   getVideosIds,
-  getYoutubeVideoIDfromURL,
+  getYoutubeVideoID,
   getYoutubeVideosDuration,
 } from '~/server/api/utils/youtubeHelpers'
 import {
@@ -211,7 +211,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         props.map(async (prop) => {
           if (prop.URL) {
             const url = prop.URL.url as string
-            const id = getYoutubeVideoIDfromURL(url)
+            const id = getYoutubeVideoID(url)
             const baseURL =
               'https://noembed.com/embed?url=https://www.youtube.com/watch?v='
             return (await fetch(baseURL + id)).json()

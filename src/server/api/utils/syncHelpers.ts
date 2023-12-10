@@ -6,7 +6,7 @@ import {
   type VideoSchema,
 } from '../types/videoTypes'
 import type { Video, NotionDataIDs } from './notionHelpers'
-import { getYoutubeVideoIDfromURL } from './youtubeHelpers'
+import { getYoutubeVideoID } from './youtubeHelpers'
 
 export function findPlaylistItemsIDsInSnapshotToDelete(
   difference: NotionDataIDs[],
@@ -18,7 +18,7 @@ export function findPlaylistItemsIDsInSnapshotToDelete(
     //@ts-expect-error not assignable parameter
     (video: Video) => {
       const URL: string = video.properties.URL.url
-      const ID = getYoutubeVideoIDfromURL(URL)
+      const ID = getYoutubeVideoID(URL)
       return ID ? videosIDs.includes(ID) : null
     },
   )

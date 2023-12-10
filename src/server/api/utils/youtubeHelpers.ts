@@ -63,7 +63,7 @@ export const getVideosIds = (formattedVideos: PlaylistItem[]): string[] => {
   })
 }
 
-export function getYoutubeVideoIDfromURL(URL: string) {
+export function getYoutubeVideoID(URL: string) {
   const regex = /(?:v=|\/)([a-zA-Z0-9_-]{11})/
   const match = URL.match(regex)
   if (match) {
@@ -73,7 +73,7 @@ export function getYoutubeVideoIDfromURL(URL: string) {
   }
 }
 
-export function getYoutubePlaylistIDfromURL(URL: string) {
+export function getYoutubePlaylistID(URL: string) {
   const regex = /(?:list=)([a-zA-Z0-9_-]{34})/
   const match = URL.match(regex)
   if (match) {
