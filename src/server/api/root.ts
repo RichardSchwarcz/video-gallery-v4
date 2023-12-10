@@ -1,5 +1,4 @@
 import { createTRPCRouter } from '~/server/api/trpc'
-import { youtubeRouter } from './routers/youtubeRouter'
 import { notionRouter } from './routers/notionRouter'
 import { settingsRouter } from './routers/settingsRouter'
 
@@ -9,7 +8,6 @@ import { settingsRouter } from './routers/settingsRouter'
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
-  youtube: youtubeRouter,
   notion: notionRouter,
   settings: settingsRouter,
 })
