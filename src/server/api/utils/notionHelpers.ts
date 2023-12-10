@@ -1,4 +1,10 @@
 import type { QueryDatabaseResponse } from '@notionhq/client/build/src/api-endpoints'
+import type { SnapshotVideo } from '../types/videoTypes'
+
+export type NotionDataIDs = {
+  notionPageID: string
+  youtubeVideoID?: string
+}
 
 export const getNotionIDs = (
   mainData: QueryDatabaseResponse,
@@ -21,25 +27,9 @@ export const getNotionIDs = (
   }
 }
 
-export type Video = {
-  id: string
-  properties: {
-    URL: { url: string }
-    PlaylistItemID: {
-      rich_text: [
-        {
-          text: {
-            content: string
-          }
-        },
-      ]
-    }
-  }
-}
-
 function getNotionDataIDs(notionData: QueryDatabaseResponse): NotionDataIDs[] {
   // @ts-expect-error not assignable parameter
-  return notionData.results.map((video: Video) => {
+  return notionData.results.map((video: SnapshotVideo) => {
     const notionPageID = video.id
     const url = video.properties.URL.url
     const regex = /(?:v=|\/)([a-zA-Z0-9_-]{11})/
@@ -53,11 +43,6 @@ function getNotionDataIDs(notionData: QueryDatabaseResponse): NotionDataIDs[] {
         youtubeVideoID: '',
       }
   })
-}
-
-export type NotionDataIDs = {
-  notionPageID: string
-  youtubeVideoID?: string
 }
 
 export const getNotionDatabaseID = (url: string) => {

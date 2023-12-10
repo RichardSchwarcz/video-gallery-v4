@@ -1,11 +1,12 @@
 import type { QueryDatabaseResponse } from '@notionhq/client/build/src/api-endpoints'
-import {
-  type RawPlaylistItem,
-  type PlaylistItem,
-  type VideoDuration,
-  type VideoSchema,
+import type {
+  RawPlaylistItem,
+  PlaylistItem,
+  VideoDuration,
+  VideoSchema,
+  SnapshotVideo,
 } from '../types/videoTypes'
-import type { Video, NotionDataIDs } from './notionHelpers'
+import type { NotionDataIDs } from './notionHelpers'
 import { getYoutubeVideoID } from './youtubeHelpers'
 
 export function findPlaylistItemsIDsInSnapshotToDelete(
@@ -16,7 +17,7 @@ export function findPlaylistItemsIDsInSnapshotToDelete(
 
   const snapshotDataToDelete = notionSnapshotData.results.filter(
     //@ts-expect-error not assignable parameter
-    (video: Video) => {
+    (video: SnapshotVideo) => {
       const URL: string = video.properties.URL.url
       const ID = getYoutubeVideoID(URL)
       return ID ? videosIDs.includes(ID) : null
@@ -25,7 +26,7 @@ export function findPlaylistItemsIDsInSnapshotToDelete(
 
   const playlistItemsIDs: string[] = snapshotDataToDelete.map(
     //@ts-expect-error not assignable parameter
-    (video: Video) => {
+    (video: SnapshotVideo) => {
       return video.properties.PlaylistItemID.rich_text[0].text.content
     },
   )
