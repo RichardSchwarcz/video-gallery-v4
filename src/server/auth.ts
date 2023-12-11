@@ -176,7 +176,7 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
 
         if (tokenData.success) {
           if (Date.now() > tokenData.data.access_token_expires) {
-            refreshAccessToken(tokenData.data)
+            return refreshAccessToken(tokenData.data)
               .then((newToken) => {
                 return newToken
               })
