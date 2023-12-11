@@ -308,7 +308,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   stream.on('done', function (event) {
-    streamFunc(event, res, syncMessages.done)
+    res.write(
+      `event: ${event}\ndata: ${JSON.stringify({
+        message: syncMessages.done,
+        data: data,
+      })}\n\n`,
+    )
   })
   stream.emit('done', 'syncEvent')
 }
