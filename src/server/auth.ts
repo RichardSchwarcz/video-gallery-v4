@@ -174,17 +174,17 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
 
         const tokenData = TokenSchema.safeParse(token)
 
-        if (tokenData.success) {
-          if (Date.now() > tokenData.data.access_token_expires) {
-            return refreshAccessToken(tokenData.data)
-              .then((newToken) => {
-                return newToken
-              })
-              .catch((error) => {
-                console.log(error)
-              })
-          }
-        }
+        // if (tokenData.success) {
+        //   if (Date.now() > tokenData.data.access_token_expires) {
+        //     return refreshAccessToken(tokenData.data)
+        //       .then((newToken) => {
+        //         return newToken
+        //       })
+        //       .catch((error) => {
+        //         console.log(error)
+        //       })
+        //   }
+        // }
         return token
       },
       session: ({ session, token }) => {
