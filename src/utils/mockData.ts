@@ -20,6 +20,14 @@ export const MockAddedVideos = [
     videoOwnerChannelTitle: 'Fireship',
     duration: '22:02',
   },
+  {
+    videoId: 'GVwU_nZBDmM',
+    title: 'Last Training Before World Climbing Championships by Adam Ondra',
+    thumbnail: 'https://i.ytimg.com/vi/GVwU_nZBDmM/hqdefault.jpg',
+    url: 'https://www.youtube.com/watch?v=GVwU_nZBDmM',
+    videoOwnerChannelTitle: 'Adam Ondra',
+    duration: '13:23',
+  },
 ] as VideoSchema[]
 
 export const MockDeletedVideos = [
