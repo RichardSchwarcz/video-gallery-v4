@@ -202,10 +202,9 @@ function App() {
     },
   }
   const renderSyncDetails = (data: TValidatedSyncData) => {
-    console.log(syncDetails)
     if (syncDetails == 'added') {
       return (
-        <div className="flex flex-col gap-4">
+        <div className="flex gap-4">
           {data.newDataToMainDB.map((video) => {
             return <VideoCard data={video} key={video.videoId} />
           })}
@@ -265,7 +264,6 @@ function App() {
           {validatedSyncData.success ? (
             <div className="flex ">
               <SyncDetailsTabs onClickSyncDetailsTab={onClickSyncDetailsTab} />
-
               <div className="mx-auto mt-4 w-8/12 rounded-md border border-slate-300 p-4 shadow-messages">
                 {renderSyncDetails(validatedSyncData.data)}
               </div>
