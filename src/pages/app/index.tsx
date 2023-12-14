@@ -20,6 +20,7 @@ import SyncDetailsTabs from '~/components/sync-details-tabs'
 import VideoCard from '~/components/video-card'
 import { z } from 'zod'
 import { MockAddedVideos, MockDeletedVideos } from '~/utils/mockData'
+import EmblaCarousel from '~/components/embla-carousel'
 
 function App() {
   const [message, setMessage] = useState<TSyncMessages>()
@@ -204,11 +205,15 @@ function App() {
   const renderSyncDetails = (data: TValidatedSyncData) => {
     if (syncDetails == 'added') {
       return (
-        <div className="flex gap-4">
+        <EmblaCarousel>
           {data.newDataToMainDB.map((video) => {
-            return <VideoCard data={video} key={video.videoId} />
+            return (
+              <div key={video.videoId}>
+                <VideoCard data={video} />
+              </div>
+            )
           })}
-        </div>
+        </EmblaCarousel>
       )
     }
     if (syncDetails == 'deleted') {
@@ -261,10 +266,10 @@ function App() {
           {isLoading ? <Skeleton className="mt-4 h-8 w-96" /> : renderMessage()}
         </div>
         <div className="w-full">
-          {validatedSyncData.success ? (
+          {validatedSyncData.success && syncDetails != 'hide' ? (
             <div className="flex ">
               <SyncDetailsTabs onClickSyncDetailsTab={onClickSyncDetailsTab} />
-              <div className="mx-auto mt-4 w-8/12 rounded-md border border-slate-300 p-4 shadow-messages">
+              <div className="mx-auto mt-4 w-8/12 overflow-x-scroll rounded-md border border-slate-300 p-4 shadow-messages">
                 {renderSyncDetails(validatedSyncData.data)}
               </div>
             </div>
