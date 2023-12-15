@@ -17,10 +17,11 @@ import SettingsIcon from '~/components/icons/settings'
 import { Skeleton } from '~/components/ui/skeleton'
 import { formatDateObject } from '~/utils/formatDateObject'
 import SyncDetailsTabs from '~/components/sync-details-tabs'
-import VideoCard from '~/components/video-card'
+import VideoCardAdded from '~/components/video-card-added'
 import { z } from 'zod'
 import { MockAddedVideos, MockDeletedVideos } from '~/utils/mockData'
 import EmblaCarousel from '~/components/embla-carousel'
+import VideoCardDeleted from '~/components/video-card-deleted'
 
 function App() {
   const [message, setMessage] = useState<TSyncMessages>()
@@ -209,7 +210,7 @@ function App() {
           {data.newDataToMainDB.map((video) => {
             return (
               <div key={video.videoId}>
-                <VideoCard data={video} />
+                <VideoCardAdded data={video} />
               </div>
             )
           })}
@@ -219,14 +220,15 @@ function App() {
     if (syncDetails == 'deleted') {
       return (
         <div className="flex flex-col gap-4">
-          {data.archivedVideoInfo.map((video) => {
-            return (
-              <div key={video.url}>
-                <p>{video.title}</p>
-                <p>{video.author_name}</p>
-              </div>
-            )
-          })}
+          <EmblaCarousel>
+            {data.archivedVideoInfo.map((video) => {
+              return (
+                <div key={video.url}>
+                  <VideoCardDeleted data={video} />
+                </div>
+              )
+            })}
+          </EmblaCarousel>
         </div>
       )
     }
