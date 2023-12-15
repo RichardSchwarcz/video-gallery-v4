@@ -15,9 +15,6 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string().min(1),
     GOOGLE_REDIRECT_URI: z.string().min(1),
 
-    NOTION_DATABASE_ID: z.string().min(1),
-    NOTION_SNAPSHOT_ID: z.string().min(1),
-
     NOTION_CLIENT_ID: z.string().min(1),
     NOTION_CLIENT_SECRET: z.string().min(1),
     NOTION_REDIRECT_URI: z.string().min(1),
@@ -45,9 +42,6 @@ export const env = createEnv({
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
-
-    NOTION_DATABASE_ID: process.env.NOTION_DATABASE_ID,
-    NOTION_SNAPSHOT_ID: process.env.NOTION_SNAPSHOT_ID,
 
     NOTION_CLIENT_ID: process.env.NOTION_CLIENT_ID,
     NOTION_CLIENT_SECRET: process.env.NOTION_CLIENT_SECRET,
