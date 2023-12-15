@@ -23,6 +23,8 @@ import { MockAddedVideos, MockDeletedVideos } from '~/utils/mockData'
 import EmblaCarousel from '~/components/embla-carousel'
 import VideoCardDeleted from '~/components/video-card-deleted'
 
+export type SyncDetails = 'summary' | 'added' | 'deleted' | 'hide'
+
 function App() {
   const [message, setMessage] = useState<TSyncMessages>()
   const [syncData, setSyncData] = useState<ResponseData>({
@@ -31,9 +33,7 @@ function App() {
     archivedVideoInfo: [],
   })
   const [isSyncing, setIsSyncing] = useState(false)
-  const [syncDetails, setSyncDetails] = useState<
-    'added' | 'deleted' | 'errors' | 'summary' | 'hide'
-  >('summary')
+  const [syncDetails, setSyncDetails] = useState<SyncDetails>('summary')
 
   const { status, data: sessionData } = useSession()
   const { mutate: lastSyncMutation } = api.settings.setLastSync.useMutation()
@@ -232,9 +232,6 @@ function App() {
         </div>
       )
     }
-    if (syncDetails == 'errors') {
-      return <div>errors</div>
-    }
     if (syncDetails == 'summary') {
       return (
         <>
@@ -253,10 +250,10 @@ function App() {
     }
   }
 
-  const onClickSyncDetailsTab = (
-    tab: 'added' | 'deleted' | 'errors' | 'hide',
-  ) => {
-    setSyncDetails(tab)
+  type Tabs = Exclude<SyncDetails, 'summary'>
+
+  const onClickSyncDetailsTab = (tab: Tabs) => {
+    setSyncDetails(tab as SyncDetails)
   }
 
   return (
@@ -270,7 +267,10 @@ function App() {
         <div className="w-full">
           {validatedSyncData.success && syncDetails != 'hide' ? (
             <div className="flex ">
-              <SyncDetailsTabs onClickSyncDetailsTab={onClickSyncDetailsTab} />
+              <SyncDetailsTabs
+                onClickSyncDetailsTab={onClickSyncDetailsTab}
+                syncDetails={syncDetails}
+              />
               <div className="mx-auto mt-4 w-8/12 overflow-x-scroll rounded-md border border-slate-300 p-4 shadow-messages">
                 {renderSyncDetails(validatedSyncData.data)}
               </div>
