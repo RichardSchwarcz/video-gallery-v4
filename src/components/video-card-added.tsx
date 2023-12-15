@@ -3,7 +3,7 @@ import { truncateTitle } from '~/utils/truncateVideoTitle'
 import { TooltipWrapper } from './tooltip-wrapper'
 import type { VideoSchema } from '~/server/api/types/videoTypes'
 
-function VideoCard({ data }: { data: VideoSchema }) {
+function VideoCardAdded({ data }: { data: VideoSchema }) {
   return (
     <div className="relative my-2 flex h-[152px] w-[141px] flex-col rounded-md outline outline-1 outline-slate-500">
       <div className="relative h-[78px] w-[141px] overflow-hidden rounded-t-md">
@@ -32,4 +32,4 @@ function VideoCard({ data }: { data: VideoSchema }) {
   )
 }
 
-export default VideoCard
+export default VideoCardAdded
