@@ -6,7 +6,7 @@ type props = {
 
 function SyncDetailsTabs({ onClickSyncDetailsTab }: props) {
   return (
-    <div className="fixed top-0 flex w-[140px] flex-col gap-4 pt-20">
+    <div className="fixed top-20 flex w-[140px] flex-col gap-4 ">
       <Button
         variant={'outline'}
         onClick={() => onClickSyncDetailsTab('added')}
