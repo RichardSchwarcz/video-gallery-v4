@@ -10,7 +10,6 @@ import {
   postDelayedRequests,
   type SnapshotData,
 } from '~/server/api/utils/syncHelpers'
-import { PLAYLIST_ID } from '~/server/constants'
 import type {
   ArchivedVideoInfo,
   PlaylistItem,
@@ -27,7 +26,7 @@ import {
 import {
   formatPlaylistItems,
   getVideosIds,
-  getYoutubeVideoIDfromURL,
+  getYoutubeVideoID,
   getYoutubeVideosDuration,
 } from '~/server/api/utils/youtubeHelpers'
 import {
@@ -40,6 +39,14 @@ import EventEmitter from 'events'
 import { isYoutubeAuthorized } from '~/utils/auth'
 import type { PageObjectResponse } from '@notionhq/client/build/src/api-endpoints'
 import { prisma } from '~/server/db'
+import { NotionToken } from '~/lib/validations/user'
+import { idSchema } from '~/lib/validations/form'
+
+export type ResponseData = {
+  newDataToSnapshotDB: SnapshotData
+  newDataToMainDB: VideoSchema[]
+  archivedVideoInfo: ArchivedVideoInfo[]
+}
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession({ req })
@@ -74,22 +81,36 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       ],
     },
     select: {
-      notionAccessTokens: true,
+      notionAccessToken: true,
+      notionMainDbId: true,
+      notionSnapshotDbId: true,
+      youtubePlaylistId: true,
     },
   })
 
-  const notionAccessToken = user?.notionAccessTokens[0]?.access_token ?? ''
+  const settingsSchema = idSchema.extend({
+    notionAccessToken: NotionToken,
+  })
+
+  const userData = settingsSchema.safeParse(user)
+
+  if (!userData.success) {
+    throw new Error('Please set your settings')
+  }
+
+  const notionAccessToken = userData.data.notionAccessToken.access_token
 
   stream.on('comparingDifference', function (event) {
-    res.write(
-      `event: ${event}\ndata: ${JSON.stringify({
-        message: syncMessage.comparing,
-      })}\n\n`,
-    )
+    streamFunc(event, res, syncMessages.comparing)
   })
   stream.emit('comparingDifference', 'syncEvent')
 
-  const { mainData, snapshotData } = await getNotionData(notionAccessToken)
+  const { mainData, snapshotData } = await getNotionData(
+    notionAccessToken,
+    userData.data.notionMainDbId,
+    userData.data.notionSnapshotDbId,
+  )
+
   const {
     notionMainDataIDs,
     notionMainVideosIDs,
@@ -107,7 +128,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   const videosOptions: VideosOptions = {
     part: 'snippet',
     maxResults: '50',
-    playlistId: PLAYLIST_ID,
+    playlistId: userData.data.youtubePlaylistId,
   }
   const rawPlaylistItems: RawPlaylistItem[] = await getYoutubeVideosRecursively(
     accessToken,
@@ -134,6 +155,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   // -----------------------------------------------------------------------------------------
 
+  const data: ResponseData = {
+    newDataToSnapshotDB: [],
+    newDataToMainDB: [],
+    archivedVideoInfo: [],
+  }
+
   if (isDeletedFromMain) {
     //* get video ID as playlist item from snapshot data
     // each video in youtube playlist has its own unique ID for that playlist
@@ -144,11 +171,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     //* delete request to youtube playlist (remove videos deleted in notion)
     stream.on('deletingFromYoutube', function (event) {
-      res.write(
-        `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.deleting,
-        })}\n\n`,
-      )
+      streamFunc(event, res, syncMessages.deleting)
     })
     stream.emit('deletingFromYoutube', 'syncEvent')
 
@@ -169,6 +192,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       archiveNotionPage,
       350,
       notionAccessToken,
+      '',
     )) as PageObjectResponse[]
 
     const getArchivedVideoInfo = async (
@@ -178,8 +202,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const info = await Promise.all(
         props.map(async (prop) => {
           if (prop.URL) {
+            // @ts-expect-error: url is not on URL
             const url = prop.URL.url as string
-            const id = getYoutubeVideoIDfromURL(url)
+            const id = getYoutubeVideoID(url)
             const baseURL =
               'https://noembed.com/embed?url=https://www.youtube.com/watch?v='
             return (await fetch(baseURL + id)).json()
@@ -192,14 +217,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     const archivedVideoInfo = await getArchivedVideoInfo(archivedPages)
 
     stream.on('isDeletedFromMain', function (event) {
-      res.write(
-        `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.deleted,
-          data: archivedVideoInfo,
-        })}\n\n`,
-      )
+      streamFunc(event, res, syncMessages.deleted)
     })
     stream.emit('isDeletedFromMain', 'syncEvent')
+
+    data.archivedVideoInfo = archivedVideoInfo
   }
 
   if (hasNewYoutubeVideos) {
@@ -217,11 +239,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     //* post to notion main DB (new video objects)
     stream.on('addingToNotion', function (event) {
-      res.write(
-        `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.adding,
-        })}\n\n`,
-      )
+      streamFunc(event, res, syncMessages.adding)
     })
     stream.emit('addingToNotion', 'syncEvent')
 
@@ -231,6 +249,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       postToNotionDatabase,
       350,
       notionAccessToken,
+      userData.data.notionMainDbId,
     )
 
     //* post to notion snapshot DB (new video objects)
@@ -240,17 +259,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       postToNotionSnapshot,
       350,
       notionAccessToken,
+      userData.data.notionSnapshotDbId,
     )
 
     stream.on('hasNewYoutubeVideos', function (event) {
-      res.write(
-        `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.added,
-          data: newDataToMainDB,
-        })}\n\n`,
-      )
+      streamFunc(event, res, syncMessages.added)
     })
     stream.emit('hasNewYoutubeVideos', 'syncEvent')
+
+    data.newDataToMainDB = newDataToMainDB
   }
 
   const accidentallyDeletedFromSnapshot = rawPlaylistItems.filter(
@@ -266,11 +283,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     //* post to notion snapshot DB (new video objects)
 
     stream.on('snapshotAdding', function (event) {
-      res.write(
-        `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.snapshotAdding,
-        })}\n\n`,
-      )
+      streamFunc(event, res, syncMessages.snapshotAdding)
     })
     stream.emit('snapshotAdding', 'syncEvent')
 
@@ -283,101 +296,72 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       postToNotionSnapshot,
       350,
       notionAccessToken,
+      userData.data.notionSnapshotDbId,
     )
 
     stream.on('isDeletedFromSnapshot', function (event) {
-      res.write(
-        `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.snapshot,
-          data: newDataToSnapshotDB,
-        })}\n\n`,
-      )
+      streamFunc(event, res, syncMessages.snapshot)
     })
     stream.emit('isDeletedFromSnapshot', 'syncEvent')
-  }
 
-  if (!isDeletedFromMain && !hasNewYoutubeVideos && !isDeletedFromSnapshot) {
-    stream.on('isSynced', function (event) {
-      res.write(
-        `event: ${event}\ndata: ${JSON.stringify({
-          message: syncMessage.synced,
-        })}\n\n`,
-      )
-    })
-    stream.emit('isSynced', 'syncEvent')
+    data.newDataToSnapshotDB = newDataToSnapshotDB
   }
 
   stream.on('done', function (event) {
     res.write(
       `event: ${event}\ndata: ${JSON.stringify({
-        message: syncMessage.done,
+        message: syncMessages.done,
+        data: data,
       })}\n\n`,
     )
   })
   stream.emit('done', 'syncEvent')
-
-  // res.end("done\n");
 }
 
 export default handler
 
-export const syncMessage = {
-  comparing: 'Comparing differences between notion and youtube',
-  deleting: 'Deleting videos from youtube playlist',
-  adding: 'Adding videos to notion database',
-  synced: 'Everything is already in sync',
+export const syncMessages = {
+  comparing: 'Comparing differences',
+  deleting: 'Deleting videos from YouTube playlist',
+  adding: 'Adding videos to Notion database',
   done: 'Everything is in sync 🎉',
-  snapshotAdding: 'Adding videos back to notion snapshot database',
+  snapshotAdding: 'Adding videos back to Notion snapshot database',
 
   deleted: 'Deleted these videos from youtube playlist',
   added: 'Added these videos to notion database',
   snapshot: 'Added these videos back to notion snapshot database',
 } as const
 
-export type EventSourceDataType =
+export type TSyncMessages = (typeof syncMessages)[keyof typeof syncMessages]
+
+export type EventSourceMessages =
   | {
-      message: typeof syncMessage.deleted
-      data: ArchivedVideoInfo[]
+      message: typeof syncMessages.deleted
     }
   | {
-      message: typeof syncMessage.added
-      data: VideoSchema[]
+      message: typeof syncMessages.added
     }
   | {
-      message: typeof syncMessage.snapshot
-      data: SnapshotData
+      message: typeof syncMessages.snapshot
     }
   | {
-      message: typeof syncMessage.comparing
+      message: typeof syncMessages.comparing
     }
   | {
-      message: typeof syncMessage.adding
+      message: typeof syncMessages.adding
     }
   | {
-      message: typeof syncMessage.deleting
+      message: typeof syncMessages.deleting
     }
   | {
-      message: typeof syncMessage.snapshotAdding
-    }
-  | {
-      message: typeof syncMessage.synced
-    }
-  | {
-      message: typeof syncMessage.done
+      message: typeof syncMessages.snapshotAdding
     }
 
-// export type SyncMessageType = keyof typeof syncMessage;
-
-// const streamFunc = (
-//   event: any,
-//   res: NextApiResponse,
-//   message: string,
-//   data?,
-// ) => {
-//   res.write(
-//     `event: ${event}\ndata: ${JSON.stringify({
-//       message: syncMessage.synced,
-//       data,
-//     })}\n\n`,
-//   );
-// };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const streamFunc = (event: any, res: NextApiResponse, message: string) => {
+  res.write(
+    `event: ${event}\ndata: ${JSON.stringify({
+      message: message,
+    })}\n\n`,
+  )
+}

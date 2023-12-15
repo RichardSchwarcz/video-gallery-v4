@@ -1,0 +1,18 @@
+version: '3'
+services:
+  video-gallery-v4-db:
+    container_name: video-gallery-v4
+    platform: linux/arm64
+    image: timescale/timescaledb:latest-pg15
+    restart: always
+    ports:
+      - '${DB_PORT}:5432'
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'postgres'
+      POSTGRES_DB: '${DB_NAME}'
+    volumes:
+      - vg-v4-db-volume:/var/lib/postgresql/data
+
+volumes:
+  vg-v4-db-volume:

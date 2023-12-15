@@ -15,7 +15,11 @@ model User {
   email              String?         @unique
   emailVerified      Boolean
   picture            String?
-  notionAccessTokens NotionToken[]
+  lastSync           DateTime?
+  youtubePlaylistId  String?         @unique
+  notionMainDbId     String?         @unique
+  notionSnapshotDbId String?         @unique
+  notionAccessToken  NotionToken?
   youtubeAccount     YoutubeAccount?
 }
 
@@ -41,6 +45,6 @@ model NotionToken {
   owner_id               String
   duplicated_template_id String?
   request_id             String
-  userId                 String?
+  userId                 String? @unique
   user                   User?   @relation(fields: [userId], references: [id])
 }

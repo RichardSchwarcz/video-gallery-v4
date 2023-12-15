@@ -1,108 +1,142 @@
 import { useSession } from 'next-auth/react'
-import { useReducer, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '~/components/ui/button'
 import Link from 'next/link'
-import { ModeToggle } from '~/components/mode-toggle'
-import { ProfileDropdownMenu } from '~/components/profile-dropdown-menu'
-import { AuthorizationMenu } from '~/components/authorization-menu'
 import { ButtonLoading } from '~/components/ui/button-loading'
-import { type EventSourceDataType, syncMessage } from '../api/sync'
-import Image from 'next/image'
-import { TooltipWrapper } from '~/components/tooltip-wrapper'
-import { truncateTitle } from '~/utils/truncateVideoTitle'
-import { initialState, reducer } from '~/utils/reducer'
-import SyncStatusMessage from '~/components/sync-status-message'
+import {
+  type EventSourceMessages,
+  syncMessages,
+  type ResponseData,
+  type TSyncMessages,
+} from '../api/sync'
+import Navbar from '~/components/navbar'
+import SyncIcon from '~/components/icons/sync'
+import { api } from '~/utils/api'
+import WelcomeMessage from '~/components/welcome-message'
+import SettingsIcon from '~/components/icons/settings'
+import { Skeleton } from '~/components/ui/skeleton'
+import { formatDateObject } from '~/utils/formatDateObject'
+import SyncDetailsTabs from '~/components/sync-details-tabs'
+import VideoCardAdded from '~/components/video-card-added'
+import { z } from 'zod'
+// import { MockAddedVideos, MockDeletedVideos } from '~/utils/mockData'
+import EmblaCarousel from '~/components/embla-carousel'
+import VideoCardDeleted from '~/components/video-card-deleted'
+
+export type SyncDetails = 'summary' | 'added' | 'deleted' | 'hide'
 
 function App() {
-  const { status, data: sessionData } = useSession()
+  const [message, setMessage] = useState<TSyncMessages>()
+  const [syncData, setSyncData] = useState<ResponseData>({
+    newDataToSnapshotDB: [],
+    newDataToMainDB: [],
+    archivedVideoInfo: [],
+  })
   const [isSyncing, setIsSyncing] = useState(false)
-  const [areDetailsVisible, setAreDetailsVisible] = useState(false)
-  const [isDeletedVisible, setIsDeletedVisible] = useState(false)
-  const [isAddedVisible, setIsAddedVisible] = useState(false)
-  const [isDoneVisible, setIsDoneVisible] = useState(false)
-  const [state, dispatch] = useReducer(reducer, initialState)
+  const [syncDetails, setSyncDetails] = useState<SyncDetails>('summary')
+
+  const { status, data: sessionData } = useSession()
+  const { mutate: lastSyncMutation } = api.settings.setLastSync.useMutation()
+  const { data: lastSync } = api.settings.getLastSync.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+  })
+  const { isSuccess: hasSettings, isLoading } =
+    api.settings.hasSettings.useQuery(undefined, {
+      retry: false,
+      refetchOnWindowFocus: false,
+    })
 
   const handleSync = () => {
     setIsSyncing(true)
     try {
       const eventSource = new EventSource('/api/sync')
       eventSource.addEventListener('syncEvent', (e) => {
-        const data = JSON.parse(e.data as string) as EventSourceDataType
-        if (data.message == syncMessage.deleted) {
-          dispatch({
-            ...initialState,
-            type: syncMessage.deleted,
-            deleted: { message: data.message, data: data.data },
-          })
-        }
-        if (data.message == syncMessage.added) {
-          dispatch({
-            ...initialState,
-            type: syncMessage.added,
-            added: { message: data.message, data: data.data },
-          })
-        }
-        if (data.message == syncMessage.synced) {
-          dispatch({
-            ...initialState,
-            type: syncMessage.synced,
-            synced: { message: data.message },
-          })
-        }
-        if (data.message == syncMessage.done) {
-          dispatch({
-            ...initialState,
-            type: syncMessage.done,
-            done: { message: data.message },
-          })
+        const data = JSON.parse(e.data as string) as
+          | EventSourceMessages
+          | {
+              message: typeof syncMessages.done
+              data: ResponseData
+            }
+        setMessage(data.message)
+
+        if (data.message == syncMessages.done) {
+          setSyncData(data.data)
           setIsSyncing(false)
-        }
-        if (data.message == syncMessage.snapshot) {
-          dispatch({
-            ...initialState,
-            type: syncMessage.snapshot,
-            snapshot: { message: data.message, data: data.data },
-          })
-        }
-        if (data.message == syncMessage.adding) {
-          dispatch({
-            ...initialState,
-            type: syncMessage.adding,
-            adding: { message: data.message },
-          })
-        }
-        if (data.message == syncMessage.comparing) {
-          dispatch({
-            ...initialState,
-            type: syncMessage.comparing,
-            comparing: { message: data.message },
-          })
-        }
-        if (data.message == syncMessage.deleting) {
-          dispatch({
-            ...initialState,
-            type: syncMessage.deleting,
-            deleting: { message: data.message },
-          })
-        }
-        if (data.message == syncMessage.snapshotAdding) {
-          dispatch({
-            ...initialState,
-            type: syncMessage.snapshotAdding,
-            snapshotAdding: { message: data.message },
-          })
+          lastSyncMutation()
         }
       })
-      eventSource.addEventListener('open', (e) => {
-        console.log('open', e)
+      eventSource.addEventListener('open', () => {
+        return
       })
-      eventSource.addEventListener('error', (e) => {
-        console.log(e)
+      eventSource.addEventListener('error', () => {
         eventSource.close()
       })
     } catch (error) {
-      console.log(error)
+      throw new Error('error')
     }
+  }
+
+  const renderSyncButton = () => {
+    if (isSyncing) {
+      return (
+        <div className="mb-4">
+          <ButtonLoading loadingText="Syncing" />
+        </div>
+      )
+    }
+    if (!hasSettings && !isLoading) {
+      return (
+        <Button asChild className="mb-4 cursor-pointer">
+          <div className="flex gap-2">
+            <SettingsIcon />
+            <Link href={'/app/settings'} className="font-semibold">
+              Settings
+            </Link>
+          </div>
+        </Button>
+      )
+    }
+    if (message && message == syncMessages.done) {
+      return
+    }
+    return (
+      <Button onClick={() => handleSync()} className="mb-4 w-64">
+        <SyncIcon />
+        <span className="pl-2 font-semibold">Sync</span>
+      </Button>
+    )
+  }
+
+  const renderMessage = () => {
+    if (message) {
+      return (
+        <div className="rounded-md border border-slate-300 p-2 shadow-messages">
+          <p className="px-16">{message}</p>
+        </div>
+      )
+    }
+    if (hasSettings && lastSync) {
+      return (
+        <div className="rounded-md border border-slate-300 p-2 shadow-messages">
+          <p className="px-16">Last Sync: {formatDateObject(lastSync)}</p>
+        </div>
+      )
+    }
+    if (hasSettings && !lastSync) {
+      return (
+        <div className="rounded-md border border-slate-300 p-2 shadow-messages">
+          <p className="line-clamp-2 px-4">
+            Try adding some videos to your YouTube playlist and click sync!
+          </p>
+        </div>
+      )
+    }
+    return (
+      <div className="mt-4 w-2/3 rounded-md border border-slate-300 p-4 shadow-messages">
+        <WelcomeMessage />
+      </div>
+    )
   }
 
   if (status === 'unauthenticated') {
@@ -118,204 +152,126 @@ function App() {
     )
   }
 
-  return (
-    <div className="p-4">
-      <nav className="flex flex-row-reverse items-center gap-2 rounded-md">
-        <ProfileDropdownMenu sessionData={sessionData} />
-        <AuthorizationMenu sessionData={sessionData} />
-        <ModeToggle />
-      </nav>
+  // validate syncData with zod
+  const syncDataSchema = z
+    .object({
+      newDataToSnapshotDB: z.array(z.object({})),
+      newDataToMainDB: z.array(
+        z.object({
+          videoId: z.string(),
+          title: z.string(),
+          thumbnail: z.string(),
+          url: z.string(),
+          videoOwnerChannelTitle: z.string(),
+          duration: z.string(),
+        }),
+      ),
+      archivedVideoInfo: z.array(
+        z.object({
+          author_name: z.string(),
+          author_url: z.string(),
+          height: z.number(),
+          html: z.string(),
+          provider_name: z.string(),
+          provider_url: z.string(),
+          thumbnail_height: z.number(),
+          thumbnail_url: z.string(),
+          thumbnail_width: z.number(),
+          title: z.string(),
+          type: z.string(),
+          url: z.string(),
+          version: z.string(),
+          width: z.number(),
+        }),
+      ),
+    })
+    .refine((data) => {
+      return (
+        data.newDataToSnapshotDB.length > 0 ||
+        data.newDataToMainDB.length > 0 ||
+        data.archivedVideoInfo.length > 0
+      )
+    })
+  const validatedSyncData = syncDataSchema.safeParse(syncData)
 
-      <div className="mx-auto flex w-fit flex-col items-center rounded-md border border-slate-500 p-4">
-        <div>
-          {isSyncing ? (
-            <ButtonLoading />
-          ) : (
-            <Button onClick={() => handleSync()} className="w-64">
-              Sync
-            </Button>
-          )}
-        </div>
-        <div className="mt-4 flex gap-2">
-          <div className="w-64 rounded-md border border-slate-500 p-4">
-            <div className="mb-2 border-b border-slate-500 text-center text-lg font-semibold">
-              Sync status messages
-            </div>
-            <div>
-              {!!state.comparing.message && (
-                <SyncStatusMessage message={state.comparing.message} />
-              )}
-              {!!state.deleting.message && (
-                <SyncStatusMessage message={state.deleting.message} />
-              )}
-              {!!state.deleted.message && (
-                <div className="flex flex-col gap-1">
-                  <Button
-                    variant={'syncMessage'}
-                    size={'syncMessage'}
-                    onClick={() => {
-                      setAreDetailsVisible(true)
-                      setIsDeletedVisible(!isDeletedVisible)
-                      setIsAddedVisible(false)
-                      setIsDoneVisible(false)
-                    }}
-                  >
-                    {state.deleted.message}
-                  </Button>
-                  <div className="flex justify-center">
-                    <svg height="20" width="33">
-                      <circle cx="4" cy="8.5" r="3" fill="gray" />
-                      <circle cx="14" cy="8.5" r="3" fill="gray" />
-                      <circle cx="24" cy="8.5" r="3" fill="gray" />
-                    </svg>
-                  </div>
-                </div>
-              )}
-              {!!state.adding.message && (
-                <SyncStatusMessage message={state.adding.message} />
-              )}
-              {!!state.added.message && (
-                <div className="flex flex-col gap-1">
-                  <Button
-                    variant={'syncMessage'}
-                    size={'syncMessage'}
-                    onClick={() => {
-                      setAreDetailsVisible(true)
-                      setIsAddedVisible(!isAddedVisible)
-                      setIsDeletedVisible(false)
-                      setIsDoneVisible(false)
-                    }}
-                  >
-                    {state.added.message}
-                  </Button>
-                  <div className="flex justify-center">
-                    <svg height="20" width="33">
-                      <circle cx="4" cy="8.5" r="3" fill="gray" />
-                      <circle cx="14" cy="8.5" r="3" fill="gray" />
-                      <circle cx="24" cy="8.5" r="3" fill="gray" />
-                    </svg>
-                  </div>
-                </div>
-              )}
-              {!!state.snapshotAdding.message && (
-                <SyncStatusMessage message={state.snapshotAdding.message} />
-              )}
-              {!!state.snapshot.message && (
-                <SyncStatusMessage message={state.snapshot.message} />
-              )}
-              {!!state.done.message && (
-                <Button
-                  variant={'syncMessage'}
-                  size={'syncMessage'}
-                  onClick={() => {
-                    setAreDetailsVisible(true)
-                    setIsDoneVisible(!isDoneVisible)
-                    setIsDeletedVisible(false)
-                    setIsAddedVisible(false)
-                  }}
-                >
-                  {state.done.message}
-                </Button>
-              )}
-              {!!state.synced.message && (
-                <SyncStatusMessage message={state.synced.message} />
-              )}
-            </div>
-          </div>
-          {areDetailsVisible && (
-            <div className="w-64 overflow-y-scroll rounded-md border border-slate-500 p-4">
-              <div className="border-b border-slate-500 text-center text-lg font-semibold">
-                Details
+  type TValidatedSyncData = z.infer<typeof syncDataSchema>
+
+  const renderSyncDetails = (data: TValidatedSyncData) => {
+    if (syncDetails == 'added') {
+      return (
+        <EmblaCarousel>
+          {data.newDataToMainDB.map((video) => {
+            return (
+              <div key={video.videoId}>
+                <VideoCardAdded data={video} />
               </div>
-              {isDeletedVisible && (
-                <div>
-                  {state.deleted.data.map((data) => {
-                    return (
-                      <div
-                        key={data.title}
-                        className="my-2 flex flex-col rounded-md border border-slate-500"
-                      >
-                        <Image
-                          src={data.thumbnail_url}
-                          alt="img"
-                          width="480"
-                          height="360"
-                          className="rounded-t-md"
-                        />
-                        <TooltipWrapper text={data.title}>
-                          <a href={data.url} target="_blank">
-                            <div className="p-2 text-sm">
-                              {truncateTitle(data.title)}
-                            </div>
-                          </a>
-                        </TooltipWrapper>
-                        <TooltipWrapper text={data.author_name}>
-                          <div className="p-2 text-sm font-semibold">
-                            {data.author_name}
-                          </div>
-                        </TooltipWrapper>
-                      </div>
-                    )
-                  })}
+            )
+          })}
+        </EmblaCarousel>
+      )
+    }
+    if (syncDetails == 'deleted') {
+      return (
+        <div className="flex flex-col gap-4">
+          <EmblaCarousel>
+            {data.archivedVideoInfo.map((video) => {
+              return (
+                <div key={video.url}>
+                  <VideoCardDeleted data={video} />
                 </div>
-              )}
-              {isAddedVisible && (
-                <div>
-                  {state.added.data.map((data) => {
-                    return (
-                      <div
-                        key={data.title}
-                        className="my-2 flex flex-col rounded-md border border-slate-500"
-                      >
-                        <Image
-                          src={data.thumbnail}
-                          alt="img"
-                          width="480"
-                          height="360"
-                          className="rounded-t-md"
-                        />
-                        <TooltipWrapper text={data.title}>
-                          <a href={data.url} target="_blank">
-                            <div className="p-2 text-sm">
-                              {truncateTitle(data.title)}
-                            </div>
-                          </a>
-                        </TooltipWrapper>
-                        <TooltipWrapper text={data.videoOwnerChannelTitle}>
-                          <div className="p-2 text-sm font-semibold">
-                            {data.videoOwnerChannelTitle}
-                          </div>
-                        </TooltipWrapper>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-              {isDoneVisible && (
-                <div className="flex flex-col gap-2 pt-2">
-                  {state.added.data.length > 1 ? (
-                    <div className="rounded-md bg-gradient-to-tr from-lime-600 to-emerald-600 p-2 text-slate-100">
-                      Added {state.added.data.length} videos to youtube
-                    </div>
-                  ) : (
-                    <div className="rounded-md bg-gradient-to-tr from-lime-600 to-emerald-600 p-2 text-slate-100">
-                      Added {state.added.data.length} video to youtube
-                    </div>
-                  )}
+              )
+            })}
+          </EmblaCarousel>
+        </div>
+      )
+    }
+    if (syncDetails == 'summary') {
+      return (
+        <>
+          <p>
+            Added {data.newDataToMainDB.length} new{' '}
+            {data.newDataToMainDB.length == 1 ? 'video' : 'videos'} to Notion
+            database
+          </p>
+          <p className="pt-2">
+            Removed {data.archivedVideoInfo.length}{' '}
+            {data.archivedVideoInfo.length == 1 ? 'video' : 'videos'} from
+            YouTube playlist
+          </p>
+        </>
+      )
+    }
+  }
 
-                  {state.deleted.data.length > 1 ? (
-                    <div className="rounded-md bg-gradient-to-tr from-rose-600 to-red-600 p-2 text-slate-100">
-                      Deleted {state.deleted.data.length} videos from youtube
-                    </div>
-                  ) : (
-                    <div className="rounded-md bg-gradient-to-tr from-orange-500 to-rose-500 p-2 text-slate-100">
-                      Deleted {state.deleted.data.length} video from youtube
-                    </div>
-                  )}
-                </div>
-              )}
+  type Tabs = Exclude<SyncDetails, 'summary'>
+
+  const onClickSyncDetailsTab = (tab: Tabs) => {
+    setSyncDetails(tab as SyncDetails)
+    if (tab == 'hide') {
+      setMessage(undefined)
+    }
+  }
+
+  return (
+    <div className="container mx-auto pt-6">
+      <Navbar sessionData={sessionData} />
+      <div className="mx-auto flex flex-col items-center">
+        <div>{renderSyncButton()}</div>
+        <div className="flex justify-center">
+          {isLoading ? <Skeleton className="mt-4 h-8 w-96" /> : renderMessage()}
+        </div>
+        <div className="w-full">
+          {validatedSyncData.success && syncDetails != 'hide' ? (
+            <div className="flex ">
+              <SyncDetailsTabs
+                onClickSyncDetailsTab={onClickSyncDetailsTab}
+                syncDetails={syncDetails}
+              />
+              <div className="mx-auto mt-4 w-8/12 overflow-x-scroll rounded-md border border-slate-300 p-4 shadow-messages">
+                {renderSyncDetails(validatedSyncData.data)}
+              </div>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

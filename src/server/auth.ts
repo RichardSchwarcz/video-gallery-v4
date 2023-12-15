@@ -9,6 +9,7 @@ import GoogleProvider from 'next-auth/providers/google'
 
 import { env } from '~/env.mjs'
 import { prisma } from './db'
+import { z } from 'zod'
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -27,12 +28,20 @@ declare module 'next-auth' {
   }
 }
 
+const TokenSchema = z.object({
+  access_token: z.string(),
+  access_token_expires: z.number(),
+  refresh_token: z.string(),
+  scope: z.string(),
+})
+type TokenData = z.infer<typeof TokenSchema>
+
 /**
  * Takes a token, and returns a new token with updated
  * `accessToken` and `accessTokenExpires`. If an error occurs,
  * returns the old token and an error property
  */
-async function refreshAccessToken(token: TokenSet) {
+async function refreshAccessToken(token: TokenData) {
   try {
     const url = 'https://oauth2.googleapis.com/token'
     if (token.refresh_token) {
@@ -51,22 +60,28 @@ async function refreshAccessToken(token: TokenSet) {
         method: 'POST',
       })
 
-      const refreshedTokens = (await response.json()) as TokenSet
+      const refreshedTokensSchema = z.object({
+        access_token: z.string(),
+        expires_in: z.number(),
+        scope: z.string(),
+        token_type: z.string(),
+        id_token: z.string(),
+      })
 
-      if (!response.ok) {
-        throw refreshedTokens
-      }
+      const refreshedTokens = refreshedTokensSchema.safeParse(
+        await response.json(),
+      )
 
-      return {
-        ...token,
-        access_token: refreshedTokens.access_token,
-        access_token_expires: Date.now() + refreshedTokens.expires_in * 1000,
-        refresh_token: refreshedTokens.refresh_token ?? token.refresh_token, // Fall back to old refresh token
+      if (refreshedTokens.success) {
+        return {
+          ...token,
+          access_token: refreshedTokens.data.access_token,
+          access_token_expires:
+            Date.now() + refreshedTokens.data.expires_in * 1000,
+        }
       }
     }
   } catch (error) {
-    console.log(error)
-
     return {
       ...token,
       error: 'RefreshAccessTokenError',
@@ -81,7 +96,6 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
     },
     callbacks: {
       signIn: async ({ profile }) => {
-        console.log({ profile })
         /* 
         Session is returned when user is signed in and is giving a permission for youtube scope
         Session is needed to match youtube account to main account. Because these accounts could be different,
@@ -89,48 +103,66 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
         */
         const session = await getServerSession(req, res, authOptions)
 
-        // TODO uncomment when DB is available
-        // const user = await prisma.user.findFirst({
-        //   where: { email: { contains: profile?.email } },
-        // });
-        const user = true
-        // !!!---------------------------------------------------
+        const profileSchema = z.object({
+          name: z.string(),
+          email: z.string().email(),
+          email_verified: z.boolean(),
+          picture: z.string().url(),
+        })
 
-        if (profile) {
-          if (!user && !session) {
-            await prisma.user.create({
-              data: {
-                name: profile.name,
-                email: profile.email,
-                emailVerified: profile.email_verified,
-                picture: profile.picture,
+        const profileData = profileSchema.parse(profile)
+
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              {
+                youtubeAccount: {
+                  email: profileData.email,
+                },
               },
-            })
-            return true
-          }
-          if (!user && session) {
-            // find user id of main user which has active session
-            const mainUser = await prisma.user.findFirst({
-              where: { email: { contains: session.user.email } },
-            })
-            await prisma.youtubeAccount.create({
-              data: {
-                name: profile.name,
-                email: profile.email,
-                emailVerified: profile.email_verified,
-                picture: profile.picture,
-                userId: mainUser?.id,
+              {
+                email: profileData.email,
               },
-            })
-            return true
-          }
+            ],
+          },
+        })
+
+        if (!user && !session) {
+          await prisma.user.create({
+            data: {
+              name: profileData.name,
+              email: profileData.email,
+              emailVerified: profileData.email_verified,
+              picture: profileData.picture,
+            },
+          })
+          return true
+        }
+
+        if (!user && session) {
+          // find user id of main user which has active session
+          const email = session.user.email ?? ''
+
+          const mainUser = await prisma.user.findFirst({
+            where: { email: { contains: email } },
+            select: { id: true },
+          })
+
+          await prisma.youtubeAccount.create({
+            data: {
+              name: profileData.name,
+              email: profileData.email,
+              emailVerified: profileData.email_verified,
+              picture: profileData.picture,
+              userId: mainUser?.id,
+            },
+          })
           return true
         }
         return true
       },
       jwt: ({ token, account }) => {
         if (account) {
-          console.log({ account })
           token = {
             ...token,
             access_token: account.access_token,
@@ -139,9 +171,20 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
             scope: account.scope,
           }
         }
-        if (Date.now() > token.access_token_expires) {
-          return refreshAccessToken(token)
-        }
+
+        const tokenData = TokenSchema.safeParse(token)
+
+        // if (tokenData.success) {
+        //   if (Date.now() > tokenData.data.access_token_expires) {
+        //     return refreshAccessToken(tokenData.data)
+        //       .then((newToken) => {
+        //         return newToken
+        //       })
+        //       .catch((error) => {
+        //         console.log(error)
+        //       })
+        //   }
+        // }
         return token
       },
       session: ({ session, token }) => {
@@ -180,20 +223,3 @@ export const getServerAuthSession = (ctx: {
     authOptionsWrapper(ctx.req, ctx.res),
   )
 }
-
-// interface GoogleProfile {
-//   iss: string;
-//   azp: string;
-//   aud: string;
-//   sub: string;
-//   email: string;
-//   email_verified: boolean;
-//   at_hash: string;
-//   name: string;
-//   picture: string;
-//   given_name: string;
-//   family_name: string;
-//   locale: string;
-//   iat: number;
-//   exp: number;
-// }
