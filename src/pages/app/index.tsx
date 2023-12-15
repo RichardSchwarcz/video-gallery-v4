@@ -19,7 +19,7 @@ import { formatDateObject } from '~/utils/formatDateObject'
 import SyncDetailsTabs from '~/components/sync-details-tabs'
 import VideoCardAdded from '~/components/video-card-added'
 import { z } from 'zod'
-import { MockAddedVideos, MockDeletedVideos } from '~/utils/mockData'
+// import { MockAddedVideos, MockDeletedVideos } from '~/utils/mockData'
 import EmblaCarousel from '~/components/embla-carousel'
 import VideoCardDeleted from '~/components/video-card-deleted'
 
@@ -127,7 +127,7 @@ function App() {
       return (
         <div className="rounded-md border border-slate-300 p-2 shadow-messages">
           <p className="line-clamp-2 px-4">
-            Try adding some videos to your YouTube playlist and sync!
+            Try adding some videos to your YouTube playlist and click sync!
           </p>
         </div>
       )
@@ -192,17 +192,10 @@ function App() {
         data.archivedVideoInfo.length > 0
       )
     })
-  // const validatedSyncData = syncDataSchema.safeParse(syncData)
+  const validatedSyncData = syncDataSchema.safeParse(syncData)
 
   type TValidatedSyncData = z.infer<typeof syncDataSchema>
 
-  const validatedSyncData = {
-    success: true,
-    data: {
-      newDataToMainDB: MockAddedVideos,
-      archivedVideoInfo: MockDeletedVideos,
-    },
-  }
   const renderSyncDetails = (data: TValidatedSyncData) => {
     if (syncDetails == 'added') {
       return (
@@ -254,6 +247,9 @@ function App() {
 
   const onClickSyncDetailsTab = (tab: Tabs) => {
     setSyncDetails(tab as SyncDetails)
+    if (tab == 'hide') {
+      setMessage(undefined)
+    }
   }
 
   return (
