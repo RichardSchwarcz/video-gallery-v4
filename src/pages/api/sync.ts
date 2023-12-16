@@ -69,16 +69,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const user = await prisma.user.findFirst({
     where: {
-      OR: [
-        {
-          youtubeAccount: {
-            email: session?.user.email,
-          },
-        },
-        {
-          email: session?.user.email,
-        },
-      ],
+      email: session?.user.email,
     },
     select: {
       notionAccessToken: true,

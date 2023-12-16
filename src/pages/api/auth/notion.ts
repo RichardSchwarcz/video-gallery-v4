@@ -14,22 +14,11 @@ export default async function handler(
       res.redirect('/')
     }
 
-    console.log({ session })
-
     const tokens = await getNotionOAuthTokens(code)
 
     const user = await prisma.user.findFirst({
       where: {
-        OR: [
-          {
-            youtubeAccount: {
-              email: session?.user.email,
-            },
-          },
-          {
-            email: session?.user.email,
-          },
-        ],
+        email: session?.user.email,
       },
       select: {
         notionAccessToken: true,
@@ -42,7 +31,6 @@ export default async function handler(
         res.status(200).redirect('/app')
       }
       if (user?.notionAccessToken?.access_token !== tokens.access_token) {
-        console.log('create new token')
         await prisma.notionToken.create({
           data: {
             access_token: tokens.access_token,

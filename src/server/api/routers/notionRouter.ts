@@ -22,16 +22,7 @@ export const notionRouter = createTRPCRouter({
     try {
       const user = await prisma.user.findFirst({
         where: {
-          OR: [
-            {
-              youtubeAccount: {
-                email: ctx.session.user.email,
-              },
-            },
-            {
-              email: ctx.session.user.email,
-            },
-          ],
+          email: ctx.session.user.email,
         },
         select: {
           notionAccessToken: true,
