@@ -25,13 +25,6 @@ function SettingsTabs() {
         <Button
           variant={'outline'}
           asChild
-          className={cn(active('/app/settings/youtube'))}
-        >
-          <Link href="/app/settings/youtube">YouTube</Link>
-        </Button>
-        <Button
-          variant={'outline'}
-          asChild
           className={cn(active('/app/settings/notion'))}
         >
           <Link href="/app/settings/notion">Notion</Link>
