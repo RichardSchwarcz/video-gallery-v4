@@ -14,7 +14,7 @@ function NotionAuthPage() {
       retry: false,
     },
   )
-  const { data } = api.notion.getOAuthURL.useQuery(undefined, {
+  const { data: OAuthURL } = api.notion.getOAuthURL.useQuery(undefined, {
     enabled: !hasToken,
   })
 
@@ -27,8 +27,8 @@ function NotionAuthPage() {
           <div className="ml-20 w-8/12 rounded-md border border-slate-300 p-6 shadow-messages">
             {hasToken ? (
               <NotionAuthSettings />
-            ) : !!data ? (
-              <NotionAuthConsent data={data} />
+            ) : !!OAuthURL ? (
+              <NotionAuthConsent OAuthURL={OAuthURL} />
             ) : null}
           </div>
         </div>
