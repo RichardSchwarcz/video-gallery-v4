@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Notion from './icons/notion'
 import { Button } from './ui/button'
 
-function NotionAuthConsent({ data }: { data: string }) {
+function NotionAuthConsent({ OAuthURL }: { OAuthURL: string }) {
   return (
     <>
       <div className="flex items-center gap-2">
@@ -31,7 +31,7 @@ function NotionAuthConsent({ data }: { data: string }) {
       </p>
       <div className="flex justify-center gap-4 pt-8">
         <Button asChild className="w-40">
-          <Link href={data}>Continue</Link>
+          <Link href={OAuthURL}>Continue</Link>
         </Button>
       </div>
 

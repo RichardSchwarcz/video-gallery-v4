@@ -14,6 +14,8 @@ export default async function handler(
       res.redirect('/')
     }
 
+    console.log({ session })
+
     const tokens = await getNotionOAuthTokens(code)
 
     const user = await prisma.user.findFirst({
@@ -34,8 +36,6 @@ export default async function handler(
         id: true,
       },
     })
-
-    console.log({ user, tokens })
 
     if (tokens) {
       if (user?.notionAccessToken?.access_token === tokens.access_token) {
