@@ -18,14 +18,11 @@ function WelcomeMessage() {
         between your YouTube playlists and Notion database.
       </p>
 
-      <h2 className="font-bold">
-        Step 2: Grant Consent for YouTube Playlists and Notion Database
-      </h2>
+      <h2 className="font-bold">Step 2: Grant Consent for Notion Database</h2>
       <p className="mb-2">
         We&apos;re excited to offer you the best experience in syncing your
         YouTube playlists with the Notion database. To enable this feature,
-        please grant consent for accessing your YouTube playlists and Notion
-        database.
+        please grant consent for accessing your Notion database.
       </p>
       <p>
         Thank you for choosing our app for your syncing needs. If you have any

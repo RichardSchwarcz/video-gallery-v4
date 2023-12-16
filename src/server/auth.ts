@@ -1,4 +1,4 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
+import type { GetServerSidePropsContext } from 'next'
 import {
   getServerSession,
   type DefaultSession,
@@ -10,6 +10,7 @@ import GoogleProvider from 'next-auth/providers/google'
 import { env } from '~/env.mjs'
 import { prisma } from './db'
 import { z } from 'zod'
+import { OAUTH_GOOGLE_SCOPES } from './constants'
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -89,123 +90,95 @@ async function refreshAccessToken(token: TokenData) {
   }
 }
 
-export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
-  const authOptions: NextAuthOptions = {
-    session: {
-      strategy: 'jwt',
-    },
-    callbacks: {
-      signIn: async ({ profile }) => {
-        /* 
+export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: 'jwt',
+  },
+  callbacks: {
+    signIn: async ({ profile }) => {
+      /* 
         Session is returned when user is signed in and is giving a permission for youtube scope
         Session is needed to match youtube account to main account. Because these accounts could be different,
         there is a risk of duplication.
         */
-        const session = await getServerSession(req, res, authOptions)
 
-        const profileSchema = z.object({
-          name: z.string(),
-          email: z.string().email(),
-          email_verified: z.boolean(),
-          picture: z.string().url(),
-        })
+      const profileSchema = z.object({
+        name: z.string(),
+        email: z.string().email(),
+        email_verified: z.boolean(),
+        picture: z.string().url(),
+      })
 
-        const profileData = profileSchema.parse(profile)
+      const profileData = profileSchema.parse(profile)
 
-        const user = await prisma.user.findFirst({
-          where: {
-            OR: [
-              {
-                youtubeAccount: {
-                  email: profileData.email,
-                },
-              },
-              {
-                email: profileData.email,
-              },
-            ],
+      const user = await prisma.user.findFirst({
+        where: {
+          email: profileData.email,
+        },
+      })
+
+      if (!user) {
+        await prisma.user.create({
+          data: {
+            name: profileData.name,
+            email: profileData.email,
+            emailVerified: profileData.email_verified,
+            picture: profileData.picture,
           },
         })
-
-        if (!user && !session) {
-          await prisma.user.create({
-            data: {
-              name: profileData.name,
-              email: profileData.email,
-              emailVerified: profileData.email_verified,
-              picture: profileData.picture,
-            },
-          })
-          return true
-        }
-
-        if (!user && session) {
-          // find user id of main user which has active session
-          const email = session.user.email ?? ''
-
-          const mainUser = await prisma.user.findFirst({
-            where: { email: { contains: email } },
-            select: { id: true },
-          })
-
-          await prisma.youtubeAccount.create({
-            data: {
-              name: profileData.name,
-              email: profileData.email,
-              emailVerified: profileData.email_verified,
-              picture: profileData.picture,
-              userId: mainUser?.id,
-            },
-          })
-          return true
-        }
         return true
-      },
-      jwt: ({ token, account }) => {
-        if (account) {
-          token = {
-            ...token,
-            access_token: account.access_token,
-            access_token_expires: account.expires_at,
-            refresh_token: account.refresh_token,
-            scope: account.scope,
-          }
-        }
-
-        const tokenData = TokenSchema.safeParse(token)
-
-        // if (tokenData.success) {
-        //   if (Date.now() > tokenData.data.access_token_expires) {
-        //     return refreshAccessToken(tokenData.data)
-        //       .then((newToken) => {
-        //         return newToken
-        //       })
-        //       .catch((error) => {
-        //         console.log(error)
-        //       })
-        //   }
-        // }
-        return token
-      },
-      session: ({ session, token }) => {
-        session = {
-          ...session,
-          token,
-        }
-        return session
-      },
-      redirect: () => {
-        return '/app'
-      },
+      }
+      return true
     },
-    providers: [
-      GoogleProvider({
-        clientId: env.GOOGLE_CLIENT_ID,
-        clientSecret: env.GOOGLE_CLIENT_SECRET,
-      }),
-    ],
-  }
-  return authOptions
+    jwt: ({ token, account }) => {
+      if (account) {
+        token = {
+          ...token,
+          access_token: account.access_token,
+          access_token_expires: account.expires_at,
+          refresh_token: account.refresh_token,
+          scope: account.scope,
+        }
+      }
+
+      // const tokenData = TokenSchema.safeParse(token)
+
+      // if (tokenData.success) {
+      //   if (Date.now() > tokenData.data.access_token_expires) {
+      //     return refreshAccessToken(tokenData.data)
+      //       .then((newToken) => {
+      //         return newToken
+      //       })
+      //       .catch((error) => {
+      //         console.log(error)
+      //       })
+      //   }
+      // }
+      return token
+    },
+    session: ({ session, token }) => {
+      session = {
+        ...session,
+        token,
+      }
+      return session
+    },
+    redirect: () => {
+      return '/app'
+    },
+  },
+  providers: [
+    GoogleProvider({
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          scope: OAUTH_GOOGLE_SCOPES.join(' '),
+          access_type: 'offline',
+        },
+      },
+    }),
+  ],
 }
 
 /**
@@ -214,12 +187,8 @@ export function authOptionsWrapper(req: NextApiRequest, res: NextApiResponse) {
  * @see https://next-auth.js.org/configuration/nextjs
  */
 export const getServerAuthSession = (ctx: {
-  req: NextApiRequest
-  res: NextApiResponse
+  req: GetServerSidePropsContext['req']
+  res: GetServerSidePropsContext['res']
 }) => {
-  return getServerSession(
-    ctx.req,
-    ctx.res,
-    authOptionsWrapper(ctx.req, ctx.res),
-  )
+  return getServerSession(ctx.req, ctx.res, authOptions)
 }
