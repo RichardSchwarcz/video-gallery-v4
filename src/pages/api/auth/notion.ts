@@ -35,11 +35,14 @@ export default async function handler(
       },
     })
 
+    console.log({ user, tokens })
+
     if (tokens) {
       if (user?.notionAccessToken?.access_token === tokens.access_token) {
         res.status(200).redirect('/app')
       }
       if (user?.notionAccessToken?.access_token !== tokens.access_token) {
+        console.log('create new token')
         await prisma.notionToken.create({
           data: {
             access_token: tokens.access_token,
