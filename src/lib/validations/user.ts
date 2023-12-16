@@ -8,7 +8,7 @@ export const NotionToken = z.object({
   workspace_icon: z.string(),
   workspace_id: z.string(),
   owner_id: z.string(),
-  duplicated_template_id: z.string().optional(),
+  duplicated_template_id: z.string().nullable(),
   request_id: z.string(),
   userId: z.string().optional(),
 })
