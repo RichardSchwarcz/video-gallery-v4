@@ -6,7 +6,7 @@ function EmblaCarousel({ children }: { children: React.ReactNode }) {
   })
 
   return (
-    <div className="overflow-hidden" ref={emblaRef}>
+    <div className="overflow-hidden pl-2" ref={emblaRef}>
       <div className="flex gap-4">{children}</div>
     </div>
   )
