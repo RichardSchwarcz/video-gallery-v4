@@ -88,12 +88,12 @@ function App() {
     if (!hasSettings && !isLoading) {
       return (
         <Button asChild className="mb-4 cursor-pointer">
-          <div className="flex gap-2">
-            <SettingsIcon />
-            <Link href={'/app/settings'} className="font-semibold">
+          <Link href={'/app/settings'} className="font-semibold">
+            <div className="flex gap-2">
+              <SettingsIcon />
               Settings
-            </Link>
-          </div>
+            </div>
+          </Link>
         </Button>
       )
     }
